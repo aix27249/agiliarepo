@@ -11,7 +11,7 @@
 
 require_once 'tgzhandler.class.php';
 class Package {
-	$filename = NULL;
+	public $filename = NULL;
 	// Checks if file exists
 	public function __construct($filename) {
 		if (!file_exists($filename)) {
@@ -41,6 +41,10 @@ class Package {
 			'suggests' => [], // Fill later
 			'maintainer' => ['name' => trim($xml->maintainer->name), 'email' => trim($xml->maintainer->email)],
 			'tags' => [], // Fill later,
+			'compressed_size' => $this->filesize(),
+			'installed_size' => $this->datasize(),
+			'filename' => basename($this->filename),
+			'md5' => $this->md5(),
 			];
 
 		foreach($xml->dependencies->children() as $dep) {
@@ -72,5 +76,20 @@ class Package {
 	public function json_filelist() {
 		return json_encode($this->filelist());
 	}
+
+	public function md5() {
+		return preg_replace('/\s.*/', '', shell_exec("md5sum " . $this->filename));
+	}
+
+	public function filesize() {
+		return filesize($this->filename);
+	}
+
+	public function datasize() {
+		$data = explode("\t", shell_exec('xz -l --robot ' . $this->filename . ' | grep totals'));
+		return $data[4];
+
+	}
+
 
 }
