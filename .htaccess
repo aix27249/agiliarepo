@@ -1,0 +1,3 @@
+<FilesMatch ^((home|test|file)\.php$|\.git|.*~)$>
+	Deny from all
+</FilesMatch>
