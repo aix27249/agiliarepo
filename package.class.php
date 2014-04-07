@@ -44,6 +44,7 @@ class Package {
 			'compressed_size' => $this->filesize(),
 			'installed_size' => $this->datasize(),
 			'filename' => basename($this->filename),
+			'location' => dirname($this->filename),
 			'md5' => $this->md5(),
 			];
 
