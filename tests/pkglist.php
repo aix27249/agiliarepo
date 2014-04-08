@@ -5,7 +5,7 @@
 </head>
 <body>
 <?php
-require_once 'core/mongo.class.php';
+require_once '../core/mongo.class.php';
 
 $db = MongoConnection::c()->agiliarepo;
 
