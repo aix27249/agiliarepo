@@ -3,7 +3,7 @@ class Page {
 	public $canonical_url;
 
 	public static function fromURI($uri) {
-		$uri = preg_replace('/\/\/*/', '/', $uri);
+		$uri = preg_replace('/\/\/*/', '/', preg_replace('/\/$/', '', preg_replace('/\?.*/', '', $uri)));
 		$u = explode('/', $uri);
 		$pname = (isset($u[1]) ? $u[1] : 'home');
 
