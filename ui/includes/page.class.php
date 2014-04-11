@@ -3,11 +3,11 @@ class Page {
 	public $canonical_url;
 
 	public static function fromURI($uri) {
-		$uri = preg_replace('/\/\/*/', '/', preg_replace('/\/$/', '', preg_replace('/\?.*/', '', $uri)));
+		$uri = preg_replace('/\/\/*/', '/', preg_replace('/\/$/', '', preg_replace('/\?.*/', '', preg_replace('/\&.*/', '', $uri))));
 		$u = explode('/', $uri);
 		$pname = (isset($u[1]) ? $u[1] : 'home');
 
-		return new Page($pname);
+		return new Page($pname, $u);
 	}
 	public $modules = [], $module_blacklist = [], $styles = [], $scripts = [], $header_items = [];
 	public $title = '';
@@ -16,10 +16,11 @@ class Page {
 	private $loaded_modules = [];
 	public $block_data = [];
 
-	public function __construct($name) {
+	public function __construct($name, $path) {
 		$name = preg_replace('/\//', '', $name);
 		if (trim($name)==='') $name = 'home';
 		$this->name = $name;
+		$this->path = $path;
 		$this->template = SiteSettings::$template;
 		$f = 'pages/' . $name . '.php';
 		if (file_exists($f)) require_once $f;
