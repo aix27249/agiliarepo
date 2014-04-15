@@ -29,4 +29,9 @@ class TgzHandler {
 	public static function readFile($tgz, $file) {
 		return shell_exec('tar xf ' . $tgz . ' ' . $file . ' --to-stdout');
 	}
+
+	public static function passFile($tgz, $file) {
+		passthru('tar xf ' . $tgz . ' ' . $file . ' --to-stdout');
+	}
+
 }

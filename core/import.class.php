@@ -7,7 +7,7 @@ require_once 'mongo.class.php';
 class ImportDirectory {
 
 	// Scans directory and returns array of Package instances
-	public static function getPackages($dir) {
+	public static function getPackages($dir, $root_path = NULL) {
 		$ptr = popen('find ' . $dir . ' -type f -name \'*.t?z\'', 'r');
 		$ret = [];
 		while (!feof($ptr)) {
@@ -27,22 +27,31 @@ class ImportDirectory {
 
 
 	// Adds package to database. TODO: function should be moved to some appropriate class in future
-	public static function addToDb($pkg) {
+	public static function addToDb($pkg, $root_path = NULL, array $repository = [], array $osversion = [], array $branch = [], array $subgroup = [], $is_latest = false) {
 		$db = MongoConnection::c()->agiliarepo;
-		$db->packages->insert($pkg->metadata());
-		$db->package_files->insert(['md5' => $pkg->md5(), 'files' => $pkg->filelist()]);
+		$p = $pkg->metadata($root_path);
+		$p['repository'] = $repository;
+		$p['osversion'] = $osversion;
+		$p['branch'] = $branch;
+		$p['subgroup'] = $subgroup;
+		$p['add_date'] = new MongoDate();
+		if ($is_latest) $p['latest'] = 1;
+		$db->packages->remove(['md5' => $p['md5']]);
+		$db->packages->insert($p);
+		
+		$db->package_files->insert(['md5' => $p['md5'], 'files' => $pkg->filelist()]);
 
 	}
 
 	// Scans specified directory and imports to database
-	public static function import($dir) {
-		$l = static::getPackages($dir);
+	public static function import($dir, $root_path = NULL, array $repository = [], array $osversion = [], array $branch = [], array $subgroup = [], $is_latest = false) {
+		$l = static::getPackages($dir, $root_path);
 		$total = count($l);
 		$pos = 0;
 		foreach($l as $pkg) {
 			$pos++;
 			echo "[$pos/$total] Importing $pkg->filename\n";
-			static::addToDb($pkg);
+			static::addToDb($pkg, $root_path, $repository, $osversion, $branch, $subgroup, $is_latest);
 		}
 	}
 

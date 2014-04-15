@@ -28,7 +28,11 @@ class Package {
 	}
 
 	// Returns array of metadata
-	public function metadata() {
+	public function metadata($root_path = NULL) {
+		$filename = basename($this->filename);
+		$location = dirname($this->filename);
+		if ($root_path!==NULL) $location = mb_substr($location, (mb_strlen($root_path) + 1));
+
 		$xml = $this->xml();
 		$data = [
 			'name' => trim($xml->name),
@@ -43,8 +47,8 @@ class Package {
 			'tags' => [], // Fill later,
 			'compressed_size' => $this->filesize(),
 			'installed_size' => $this->datasize(),
-			'filename' => basename($this->filename),
-			'location' => dirname($this->filename),
+			'filename' => $filename,
+			'location' => $location,
 			'md5' => $this->md5(),
 			];
 
