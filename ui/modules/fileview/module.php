@@ -7,13 +7,20 @@ class Module_fileview extends RepositoryModule {
 
 		$ret = '';
 		$md5 = trim(@$this->page->path[2]);
-		$file = preg_replace('/^\//', '', trim(@$_GET['f']));
+		$file = preg_replace('/^\/*/', '', trim(@$_GET['f']));
 		if (strlen($md5)!==32) return 'Не указан идентификатор пакета';
 		$pkg = $this->db->packages->findOne(['md5' => $md5]);
-		$pkgfiles = $this->db->package_files->findOne(['md5' => $md5, 'files' => $file]);
+		if ($file==='') {
+			$file = '/';
+			$pkgfiles = $this->db->package_files->findOne(['md5' => $md5]);
+		}
+		else $pkgfiles = $this->db->package_files->findOne(['md5' => $md5, 'files' => $file]);
 
 		$ret .= '<h1>' . $pkg['name'] . ' ' . $pkg['version'] . '-' . $pkg['build'] . ' (' . $pkg['arch'] . ')</h1>';
-		$ret .= '<div class="path">' . $this->renderPath(explode('/', $file), '', '/fileview/' . $md5 . '?f=') . '</div>';
+
+		$path = array_merge(['/'], explode('/', $file));
+
+		$ret .= '<div class="path">' . $this->renderPath($path, '', '/fileview/' . $md5 . '?f=') . '</div>';
 
 		if (!$pkgfiles) {
 			return 'В пакете отсутствует данный файл';
@@ -21,9 +28,10 @@ class Module_fileview extends RepositoryModule {
 
 
 		if (strrpos($file, '/')===strlen($file)-1) {
+			$ret .= '<h4>Список файлов</h4>';
 			$ret .= '<ol>';
 			foreach($pkgfiles['files'] as $pkgfile) {
-				if (strpos($pkgfile, $file)!==0) continue;
+				if ($file!=='/' && strpos($pkgfile, $file)!==0) continue;
 				$ret .= '<li><a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($pkgfile) . '">' . $pkgfile . '</a></li>';
 			}
 			$ret .= '</ol>';
