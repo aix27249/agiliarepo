@@ -62,13 +62,13 @@ class Page {
 		if (isset(PageSettings::$modules[$blockname])) {
 			foreach(PageSettings::$modules[$blockname] as $modname) {
 				if ($this->isModuleBlacklisted($modname, $blockname)) continue;
-				echo @$this->block_data[$blockname][$modname];
+				echo '<div class="block block-global" id="block-' . $modname . '">' . @$this->block_data[$blockname][$modname] . '</div>';
 			}
 		}
 		if (isset($this->modules[$blockname])) {
 			foreach($this->modules[$blockname] as $modname) {
 				if ($this->isModuleBlacklisted($modname, $blockname)) continue;
-				echo @$this->block_data[$blockname][$modname];
+				echo '<div class="block block-local" id="block-' . $modname . '">' . @$this->block_data[$blockname][$modname] . '</div>';
 			}
 		}
 
@@ -86,11 +86,12 @@ class Page {
 	private function loadModuleStuff($modname, $blockname) {
 		$classname = 'Module_' . $modname;
 		if (!class_exists($classname)) return;
-		$path = 'modules/' . $modname . '/';
+		$path = '/modules/' . $modname . '/';
 		
 		$modstyles = $classname::getStyles($this, $blockname);
 		foreach($modstyles as $style) {
-			$this->styles[] = $path . $style;
+			if (strpos('/', $style)===0 || strpos('http://', $style)===0 || strpos('https://', $style)===0) $this->styles[] = $style;
+			else $this->styles[] = $path . $style;
 		}
 		$this->styles = array_unique($this->styles);
 		

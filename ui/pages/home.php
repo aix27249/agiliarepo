@@ -1,4 +1,4 @@
 <?php
 
-$this->modules = ['content' => ['homepage']];
+$this->modules = ['content' => ['lastupdates']];
 $this->title = 'Welcome!';

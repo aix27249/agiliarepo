@@ -2,7 +2,7 @@
 
 Page::loadModule('repository');
 class Module_pkglist extends RepositoryModule {
-	public function getList($packages, $limit = NULL, $offset = 0) {
+	public static function getList($packages, $limit = NULL, $offset = 0) {
 		$offset = intval($offset);
 		$limit = intval($limit);
 		$ret = '<ol>';
@@ -20,6 +20,6 @@ class Module_pkglist extends RepositoryModule {
 	}
 
 	public function run() {
-		return $this->getList($this->db->packages->find(), (@$_GET['limit'] ? intval($_GET['limit']) : 20), @$_GET['offset']);
+		return self::getList($this->db->packages->find(), (@$_GET['limit'] ? intval($_GET['limit']) : 20), @$_GET['offset']);
 	}
 }

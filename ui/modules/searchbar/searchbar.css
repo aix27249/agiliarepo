@@ -1,0 +1,13 @@
+#block-searchbar input[type="submit"] {
+	display: none;
+}
+
+#block-searchbar input[type="search"] {
+	width: 150px;
+	-webkit-transition: width 0.3s ease;
+	transition: width 0.3s ease;
+}
+
+#block-searchbar input[type="search"]:focus {
+	width: 400px;
+}

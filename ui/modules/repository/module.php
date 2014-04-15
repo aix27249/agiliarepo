@@ -10,4 +10,22 @@ class RepositoryModule extends Module {
 		$this->db = MongoConnection::c()->agiliarepo;
 		return parent::__construct($page, $blockname);
 	}
+
+	// Move it from here in future to some class like RepositoryUiElements
+	public function renderPath($path, $delimiter = '', $prefix = '/browser/') {
+		$ret = '';
+		$prev = '';
+		foreach($path as $k) {
+			if ($k==='') break;
+			if ($k!=='/') $prev .= $k . '/';
+			$ret .= '<a href="' . $prefix . $prev . '">' . $k . '</a>' . $delimiter;
+		}
+		return $ret;
+	}
+
+}
+
+
+class Module_repository extends Module {
+	static $styles = ['repository.css'];
 }

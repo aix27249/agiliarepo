@@ -1,0 +1,11 @@
+#header_wrapper {
+	background-color: #323232;
+}
+
+#header .block {
+	display: inline-block;
+	margin-right: 30px;
+	height: 50px;
+	vertical-align: middle;
+	line-height: 50px;
+}
