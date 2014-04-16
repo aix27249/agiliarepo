@@ -26,6 +26,10 @@ TODO
   * <del>User management class: add/remove/enable/disable at least</del>
   * <del>Simple authorization: simple password storage/validation will be enough for start</del>
   * <del>Understand UI structure, implement basic one</del>
+  * User groups, permissions
+  * User management UI
+  * Background worker: subsysem that gets tasks from queue, do them in background, and report about tasks status and current progress
+  * Version comparsion function - perhaps, should port it from old repository
   * Understand how API should be accessed, implement some basic queries as an example
   * Implement further UI modules - starting with repository listing, package info displaying, import new packages, etc.
   * Think about what's better to do next :)
