@@ -130,9 +130,6 @@ class User {
 
 class Module_auth extends Module {
 	public function run() {
-		if (isset($_POST['login']) && isset($_POST['password'])) {
-			Auth::tryAuth($_POST['login'], $_POST['password'], true);
-		}
 	}
 }
 
