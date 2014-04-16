@@ -9,3 +9,7 @@
 	vertical-align: middle;
 	line-height: 50px;
 }
+
+#header {
+	position: relative;
+}

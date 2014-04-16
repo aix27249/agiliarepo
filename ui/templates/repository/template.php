@@ -13,6 +13,6 @@ class Template extends GenericTemplate {
 	public static $styles = ['defaults.css', 'layout.css', 'header.css', 'content.css', 'footer.css', 'fonts.css'];
 	
 	// Template scripts (optional)
-	public static $scripts = [/*'common.js', 'jquery-1.9.1.min.js', 'jquery.color-2.1.2.min.js', 'jquery.scrollTo.min.js'*/];
+	public static $scripts = ['jquery-1.9.1.min.js', 'jquery.color-2.1.2.min.js', 'jquery.scrollTo.min.js'];
 }
 
