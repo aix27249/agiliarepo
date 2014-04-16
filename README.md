@@ -24,8 +24,8 @@ TODO
   * <del>Separate core, configuration, UI and API code by different directories - it would be good if root dir should contain only index.php (okay, stuff like README, .gitignore and .htaccess are okay there too)</del>
   * <del>Implement basic UI framework - preferably my still unimplemented and still unnamed CMFv3 :) Lots of cool ideas there, really.</del>
   * User management class: add/remove/enable/disable at least
-  * Simple authorization: simple password storage/validation will be enough for start
-  * Understand UI structure, implement basic one
+  * <del>Simple authorization: simple password storage/validation will be enough for start</del>
+  * <del>Understand UI structure, implement basic one</del>
   * Understand how API should be accessed, implement some basic queries as an example
   * Implement further UI modules - starting with repository listing, package info displaying, import new packages, etc.
   * Think about what's better to do next :)
