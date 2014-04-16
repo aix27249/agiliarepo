@@ -8,7 +8,7 @@ class Auth extends RepositoryModule {
 	public static function tryAuth($username, $password, $create_session = true, $limit_per_ip = false) {
 
 		// 1. Check if such user exists in database
-		$user = self::db()->users->findOne(['name' => $username]);
+		$user = self::db()->users->findOne(['name' => $username, 'enabled' => 1]);
 		if (!$user) return false;
 
 		// Check password match
@@ -88,7 +88,7 @@ class User {
 	}
 
 	public function __construct($user_id = NULL) {
-		$user = self::db()->users->findOne(['_id' => new MongoId($user_id)]);
+		$user = self::db()->users->findOne(['_id' => new MongoId($user_id), 'enabled' => 1]);
 		if (!$user) {
 			return NULL;
 		}
@@ -97,12 +97,20 @@ class User {
 		$this->___fields['uid'] = trim($user['_id']);
 	}
  
+	public function __get($key) {
+		return @$this->___fields[$key];
+	}
+	public function __set($key, $value) {
+		if (in_array($key, ['name', 'uid'], true)) trigger_error("User->$key is read-only");
+		$this->___fields[$key] = $value;
+	}
+
 	// TODO
 	public function can($permission) {
 		return true;
 	}
 
-	public static function createUser($name, $password) {
+	public static function create($name, $password) {
 		// 0. Check if name and password are not empty
 		if (trim($name)==='' || trim($password)==='') return false;
 		// 1. Check if such user alreay in DB
@@ -112,16 +120,42 @@ class User {
 		$hasher = new PasswordHash(8, false);
 		$hash = $hasher->HashPassword($password);
 
-		self::db()->users->insert(['name' => $name, 'pass' => $hash]);
+		self::db()->users->insert(['name' => $name, 'pass' => $hash, 'enabled' => 1]);
 		return true;
 	}
 
-	public function __get($key) {
-		return @$this->___fields[$key];
+	public static function delete($name) {
+		self::db()->users->remove(['name' => $name]);
 	}
-	public function __set($key, $value) {
-		if (in_array($key, ['name', 'uid'], true)) trigger_error("User->$key is read-only");
-		$this->___fields[$key] = $value;
+
+	public static function setEnabled($name, $enable = 1) {
+		$user = self::db()->users->findOne(['name' => $name]);
+		if (!$user) return false;
+		$user['enabled'] = ($enable ? 1 : 0);
+		self::db()->users->update(['name' => $name], $user);
+		if ($user['enabled']===0) {
+			self::db()->user_sessions->remove(['uid' => trim($user['_id'])]);
+		}
+		return true;
+	}
+
+	public static function enable($name) {
+		return self::setEnabled($name, 1);
+	}
+
+	public static function disable($name) {
+		return self::setEnabled($name, 0);
+	}
+
+	public static function setNewPassword($name, $password) {
+		$user = self::db()->users->findOne(['name' => $name]);
+		if (!$user) return false;
+
+		$hasher = new PasswordHash(8, false);
+		$hash = $hasher->HashPassword($password);
+
+		self::db()->users->update(['name' => $name], $user);
+		return true;
 	}
 }
 
