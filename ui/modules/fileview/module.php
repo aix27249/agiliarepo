@@ -39,17 +39,33 @@ class Module_fileview extends RepositoryModule {
 
 		}
 
-	
+
 		$pkg_filename = SiteSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'];
+		$tmp = tempnam('/tmp', 'agrepo_fileview');
+		TgzHandler::extractFile(SiteSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'], $file, $tmp);
 
-		if (isset($_GET['raw'])) {
-			TgzHandler::passFile(SiteSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'], $file);
+		// Check if file is binary
+		$finfo = finfo_open(FILEINFO_MIME);
+		$is_ascii = (substr(finfo_file($finfo, $tmp), 0, 4) == 'text');
 
+
+
+		if (!$is_ascii || isset($_GET['raw'])) {
+			header('Content-Description: File Transfer');
+			header('Content-Type: application/octet-stream');
+			header('Content-Disposition: attachment; filename='.basename($file));
+			header('Expires: 0');
+			header('Cache-Control: must-revalidate');
+			header('Pragma: public');
+			header('Content-Length: ' . filesize($tmp));
+			readfile($tmp);
+			unlink($tmp);
 			die();
 		}
 
-		$data = TgzHandler::readFile(SiteSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'], $file);
-		$ret .= '<pre id="fileview">' . $data . '</pre>';
+		else $ret .= '<pre id="fileview">' . file_get_contents($tmp) . '</pre>';
+
+		unlink($tmp);
 
 		return $ret;
 
@@ -69,6 +85,10 @@ class Module_fileview extends RepositoryModule {
 			$ret .= '<a href="' . $prefix . $prev . '">' . $k . '</a>' . $delimiter;
 		}
 		return $ret;
+	}
+
+	public static function isBinary($binary) {
+		return 1===preg_match('#^(?:[01]{8}){0,12}$#', $binary);
 	}
 
 
