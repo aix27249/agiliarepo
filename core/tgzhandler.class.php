@@ -30,6 +30,10 @@ class TgzHandler {
 		return shell_exec('tar xf ' . $tgz . ' ' . $file . ' --to-stdout');
 	}
 
+	public static function extractFile($tgz, $file, $output) {
+		return shell_exec('tar xf ' . $tgz . ' ' . $file . ' --to-stdout > ' . $output);
+	}
+
 	public static function passFile($tgz, $file) {
 		passthru('tar xf ' . $tgz . ' ' . $file . ' --to-stdout');
 	}
