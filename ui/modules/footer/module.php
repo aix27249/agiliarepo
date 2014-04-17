@@ -2,7 +2,6 @@
 
 Page::loadModule('repository');
 class Module_footer extends RepositoryModule {
-	public static $scripts = ['footer.js'];
 	public static $styles = ['footer.css'];
 	function run() {
 		$count = $this->db->packages->count();
@@ -37,7 +36,9 @@ class Module_footer extends RepositoryModule {
 			]);
 
 		$r = $totalsize['result'][0]['compressed_size'];
-		return 'Repository contains ' . $count . ' packages, total ' . UI::humanizeSize($r);
+		$ret = 'This server contains ' . $count . ' packages, total ' . UI::humanizeSize($r);
+
+		return $ret;
 
 	}
 

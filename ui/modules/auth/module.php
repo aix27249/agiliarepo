@@ -87,14 +87,28 @@ class User {
 		return RepositoryModule::db();
 	}
 
-	public function __construct($user_id = NULL) {
-		$user = self::db()->users->findOne(['_id' => new MongoId($user_id), 'enabled' => 1]);
+	public function __construct($user_id = NULL, $enabled_only = false) {
+		$query = ['_id' => new MongoId($user_id)];
+		if ($enabled_only) $query['enabled'] = 1;
+		$user = self::db()->users->findOne($query);
 		if (!$user) {
 			return NULL;
 		}
 
-		$this->___fields['name'] = trim($user['name']);
+		foreach($user as $key => $value) {
+			$this->___fields[$key] = $value;
+		}
 		$this->___fields['uid'] = trim($user['_id']);
+	}
+
+	public static function byName($name, $enabled_only = false) {
+		$user = self::db()->users->findOne(['name' => $name]);
+		if (!$user) {
+			return NULL;
+		}
+		$user_id = trim($user['_id']);
+		return new static($user_id, $enabled_only);
+
 	}
  
 	public function __get($key) {
@@ -107,15 +121,24 @@ class User {
 
 	// TODO
 	public function can($permission) {
-		return true;
+		// Special case: admin can everuthing.
+		if ($this->name==='admin') return true;
+
+		if (is_array($this->permissions) && in_array($permission, $this->permissions, true)) return true;
+		if (is_array($this->groups)) {
+			foreach($this->groups as $groupname) {
+				if (Group::can($groupname, $permission)) return true;
+			}
+		}
+		return false;
 	}
 
 	public static function create($name, $password) {
 		// 0. Check if name and password are not empty
-		if (trim($name)==='' || trim($password)==='') return false;
+		if (trim($name)==='' || trim($password)==='') throw new Exception('Name and/or password are empty');
 		// 1. Check if such user alreay in DB
 		$user = self::db()->users->findOne(['name' => $name]);
-		if ($user) return false;
+		if ($user) throw new Exception('User with name ' . $name . ' already exists');
 
 		$hasher = new PasswordHash(8, false);
 		$hash = $hasher->HashPassword($password);
@@ -130,7 +153,7 @@ class User {
 
 	public static function setEnabled($name, $enable = 1) {
 		$user = self::db()->users->findOne(['name' => $name]);
-		if (!$user) return false;
+		if (!$user) throw new Exception('User ' . $name . ' not found');
 		$user['enabled'] = ($enable ? 1 : 0);
 		self::db()->users->update(['name' => $name], $user);
 		if ($user['enabled']===0) {
@@ -149,17 +172,127 @@ class User {
 
 	public static function setNewPassword($name, $password) {
 		$user = self::db()->users->findOne(['name' => $name]);
-		if (!$user) return false;
+		if (!$user) throw new Exception('User ' . $name . ' not found');
 
+		if (trim($password)==='') throw new Exception('Password is empty');
 		$hasher = new PasswordHash(8, false);
 		$hash = $hasher->HashPassword($password);
+		$user['pass'] = $hash;
 
 		self::db()->users->update(['name' => $name], $user);
 		return true;
 	}
+
+	public static function addGroup($username, $groupname) {
+		if (trim($groupname)==='') throw new Exception('Group name is empty');
+		$user = self::db()->users->findOne(['name' => $username]);
+		if (!$user)  throw new Exception('User not found');
+
+
+		$user['groups'][] = $groupname;
+		$user['groups'] = array_values($user['groups']);
+
+		self::db()->users->update(['name' => $username], $user);
+		return true;
+
+	}
+
+	public static function removeGroup($username, $groupname) {
+		if (trim($groupname)==='') throw new Exception('Group name is empty');
+		$user = self::db()->users->findOne(['name' => $username]);
+		if (!$user) throw new Exception('User not found');
+
+		if (isset($user['groups'])) {
+			if (($key = array_search($groupname, $user['groups'])) !== false) {
+				unset($user['groups'][$key]);
+				$user['groups'] = array_values($user['groups']);
+				self::db()->users->update(['name' => $username], $user);
+			}
+		}
+		return true;
+
+	}
+
+	public function memberOf($groupname) {
+		if (is_array($this->groups) && in_array($groupname, $this->groups, true)) return true;
+		return false;
+	}
+
+	public static function addPermission($username, $permname) {
+		if (trim($permname)==='') throw new Exception('Permission name is empty');
+		$user = self::db()->users->findOne(['name' => $username]);
+		if (!$user)  throw new Exception('User not found');
+
+
+		$user['permissions'][] = $permname;
+		$user['permissions'] = array_values($user['permissions']);
+		self::db()->users->update(['name' => $username], $user);
+		return true;
+
+	}
+
+	public static function removePermission($username, $permname) {
+		if (trim($permname)==='') throw new Exception('Permission name is empty');
+		$user = self::db()->users->findOne(['name' => $username]);
+		if (!$user) throw new Exception('User not found');
+
+		if (isset($user['permissions'])) {
+			if (($key = array_search($permname, $user['permissions'])) !== false) {
+				unset($user['permissions'][$key]);
+				self::db()->users->update(['name' => $username], $user);
+			}
+		}
+		return true;
+
+	}
+
 }
 
+class Group {
+	private static function db() {
+		return RepositoryModule::db();
+	}
 
+	public static function addPermission($groupname, $permname) {
+		if (trim($permname)==='') throw new Exception('Permission name is empty');
+		$permissions = self::db()->group_permissions->findOne(['group' => $groupname]);
+		if (!$permissions) $permissions = ['group' => $groupname, 'permissions' => []];
+
+
+		$permissions['permissions'][] = $permname;
+		$permissions['permissions'] = array_values($permissions['permissions']);
+		self::db()->group_permissions->update(['group' => $groupname], $permissions, ['upsert' => true]);
+		return true;
+
+	}
+
+	public static function removePermission($groupname, $permname) {
+		if (trim($permname)==='') throw new Exception('Permission name is empty');
+		$permissions = self::db()->group_permissions->findOne(['group' => $groupname]);
+		if (!$permissions) return true;
+
+		if (isset($permissions['permissions'])) {
+			if (($key = array_search($permname, $permissions['permissions'])) !== false) {
+				unset($permissions['permissions'][$key]);
+				self::db()->group_permissions->update(['group' => $groupname], $permissions);
+			}
+		}
+		return true;
+
+	}
+
+	public static function can($groupname, $permname) {
+		if ($groupname==='admins') return true; // Group 'admins' is special: can everything
+		$permissions = self::db()->group_permissions->findOne(['group' => $groupname, 'permissions' => $permname]);
+		if ($permissions) return true;
+		return false;
+
+	}
+
+
+
+
+}	
 // Implements user manipulation
 
 class Module_auth extends Module {

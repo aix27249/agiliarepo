@@ -20,7 +20,9 @@ class Module_login extends Module {
 		if ($user) {
 			if (isset($_POST['ajax'])) die('OK');
 			$top = 'Logged in as <b>' . $user->name . '</b>';
-		       	$menu = '<a href="/logout">Logout</a>';
+			$menu = '';
+			if ($user->can('admin_panel')) $menu .= '<a href="/admin">Administration</a>';
+		       	$menu .= '<a href="/logout">Logout</a>';
 		}
 		else {
 			$top = 'Sign in';
