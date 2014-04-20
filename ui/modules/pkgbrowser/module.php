@@ -7,10 +7,10 @@ class Module_pkgbrowser extends RepositoryModule {
 	public function run() {
 		$path = array_slice($this->page->path, 2);
 		$query = [];
-		if (isset($path[0])) $query['repository'] = $path[0];
-		if (isset($path[1])) $query['osversion'] = $path[1];
-		if (isset($path[2])) $query['branch'] = $path[2];
-		if (isset($path[3])) $query['subgroup'] = $path[3];
+		if (isset($path[0])) $query['repositories.repository'] = $path[0];
+		if (isset($path[1])) $query['repositories.osversion'] = $path[1];
+		if (isset($path[2])) $query['repositories.branch'] = $path[2];
+		if (isset($path[3])) $query['repositories.subgroup'] = $path[3];
 
 		$newpath = array_merge(['/'], $path);
 

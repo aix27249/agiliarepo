@@ -4,7 +4,7 @@ Page::loadModule('repository');
 class Module_browser_osversions extends RepositoryModule {
 	public function run() {
 		if (!isset($this->page->path[2])) return;
-		$res = $this->db->packages->distinct('osversion');
+		$res = $this->db->packages->distinct('repositories.osversion');
 		if ($res) {
 			$ret = '<label for="browser_osversions">OS versions:</label>';
 			$ret .= '<ul id="browser_osversions">';
