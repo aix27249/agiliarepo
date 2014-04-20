@@ -22,3 +22,17 @@ class MongoConnection {
 		return static::$connection;
 	}
 }
+
+
+class MongoDBAdapter {
+	private static $db = NULL;
+	public static function db() {
+		if (!self::$db) {
+			$dbname = 'agiliarepo';//$mongo_config['dbname']; // FIXME: remove hardcode
+			self::$db = MongoConnection::c()->$dbname;
+		}
+		return self::$db;
+
+
+	}
+}
