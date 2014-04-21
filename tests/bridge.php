@@ -10,15 +10,19 @@ class RepositoryBridge extends MongoDBAdapter {
 		$this->mysqli->set_charset("utf8");
 	}
 
-	public function getNewPackages() {
+	public function getNewPackages($task = NULL) {
 		$new = self::db()->packages->distinct('md5');
 		
 		$stmt = $this->mysqli->prepare("SELECT DISTINCT package_md5 FROM packages");
 		$stmt->bind_result($md5);
 		$stmt->execute();
 		$stmt->store_result();
+		$count = $stmt->num_rows;
 		$new_packages_md5 = [];
+		$counter = 0;
 		while ($stmt->fetch()) {
+			$counter++;
+			if ($task) $task->setProgress($counter, $count);
 			if (in_array($md5, $new, true)) continue;
 			$this->importPackage($md5);
 			$new_packages_md5[] = $md5;

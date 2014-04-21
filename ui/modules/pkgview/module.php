@@ -62,7 +62,7 @@ class Module_pkgview extends RepositoryModule {
 		foreach($pkg['dependencies'] as $dep) {
 			$cond = trim(UiCore::dependParse($dep['condition']));
 			// TODO: fix link to search within packages that matches version criteria only.
-			$code .= '<li><a href="/search?q=' . urlencode($dep['name']) . '">' . $dep['name'] . '</a>' . ($cond !== '' ? $cond . $dep['version'] : '') . '</li>';
+			$code .= '<li><a href="/search?name=' . urlencode($dep['name']) . '">' . $dep['name'] . '</a>' . ($cond !== '' ? $cond . $dep['version'] : '') . '</li>';
 		}
 		$code .= '</ul>';
 
