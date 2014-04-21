@@ -1,6 +1,6 @@
 <?php
 Page::loadModule('repository');
-
+Page::loadModule('uicore');
 class Module_pkgview extends RepositoryModule {
 	static $styles = ['pkgview.css'];
 	public function run() {
@@ -14,11 +14,13 @@ class Module_pkgview extends RepositoryModule {
 		foreach($pkg['repositories'] as $path) {
 			$paths[] = implode('/', $path);
 		}
+		$paths = array_unique($paths);
 
 
+		/*
 		foreach($paths as $path) {
 			$ret .= '<div class="path">' . $this->renderPath(explode('/', $path), '') . '</div>';
-		}
+		}*/
 
 		$ret .= '<h1>' . $pkg['name'] . '</h1>';
 
@@ -33,6 +35,7 @@ class Module_pkgview extends RepositoryModule {
 			'md5' => $pkg['md5'],
 			'package size' => UI::humanizeSize($pkg['compressed_size']),
 			'uncompressed' => Ui::humanizeSize($pkg['installed_size']),
+			'add_date' => date('Y-m-d H:i:s', $pkg['add_date']->sec),
 			];
 
 		$ret .= '<div class="meta_block">';
@@ -44,14 +47,48 @@ class Module_pkgview extends RepositoryModule {
 
 		$ret .= '</div>';
 
-		$ret .= '<div class="download"><a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">Download</a></div>';
-		//$ret .= '<pre>' . print_r($pkg, true) . '</pre>';
+		$ret .= '<div class="download"><a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">Download ' . $pkg['filename'] . '</a></div>';
 
-		$ret .= '<div id="filelist"><ol>';
-		foreach($pkgfiles['files'] as $file) {
-			$ret .= '<li><a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($file) . '">' . $file . '</a></li>';
+
+		// Data in tabs
+		$tabs = [];
+
+
+
+
+
+		// Dependencies
+		$code = '<ul>';
+		foreach($pkg['dependencies'] as $dep) {
+			$cond = trim(UiCore::dependParse($dep['condition']));
+			// TODO: fix link to search within packages that matches version criteria only.
+			$code .= '<li><a href="/search?q=' . urlencode($dep['name']) . '">' . $dep['name'] . '</a>' . ($cond !== '' ? $cond . $dep['version'] : '') . '</li>';
 		}
-		$ret .= '</ol></div>';
+		$code .= '</ul>';
+
+		$tabs[] = ['title' => 'Dependencies', 'body' => $code];
+	
+
+		// Filelist
+		$code = '<div id="filelist"><ol>';
+		foreach($pkgfiles['files'] as $file) {
+			$code .= '<li><a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($file) . '">' . $file . '</a></li>';
+		}
+		$code .= '</ol></div>';
+
+		$tabs[] = ['title' => 'Files', 'body' => $code];
+
+	
+		// Repository locations
+		$code = '<ul>';
+		foreach($paths as $p) {
+			$code .= '<li><a href="/browser/' . $p . '">' . $p . '</a></li>';
+		}
+
+		$code .= '</ul>';
+		$tabs[] = ['title' => 'Repositories', 'body' => $code];
+	
+		$ret .= UiCore::tabs($tabs);
 
 		return $ret;
 	}
