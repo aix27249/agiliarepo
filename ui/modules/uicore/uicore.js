@@ -41,3 +41,13 @@ function switchSlide(slider_id, id) {
 	$("#" + slider_id + " .slider_thumb").removeClass('active');
 	$("#" + slider_id + " #slider_thumb_" + id).addClass('active');
 }
+
+$(document).ready(function() {
+	$(".tab_nav_item").click(function() {
+		var tab_id = $(this).attr('data-tab-id');
+		$('.tab_content_item').removeClass('active');
+		$('.tab_nav_item').removeClass('active');
+		$('#tab_content_item_' + tab_id).addClass('active');
+		$('#tab_nav_item_' + tab_id).addClass('active');
+	});
+});

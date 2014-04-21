@@ -123,3 +123,40 @@
 	font-size: 0.8em;
 	color: #555;
 }
+
+
+.tab_nav_item {
+	display: table-cell;
+	text-align: center;
+	padding: 5px 20px;
+	cursor: pointer;
+	border: 1px solid #777;
+}
+
+.tabs_nav {
+	display: table-row;
+	width: 100%;
+	padding: 10px;
+}
+
+.tab_nav_item.active {
+	background: #333;
+	color: white;
+}
+
+.tabs {
+	width: 100%;
+	border-collapse: collapse;
+	border: 1px solid #efefef;
+	margin: 15px 0px;
+}
+.tabs_content {
+
+	padding: 10px;
+}
+.tab_content_item {
+	display: none;
+}
+.tab_content_item.active {
+	display: block;
+}

@@ -190,4 +190,45 @@ class UiCore {
 
 		return $ret;
 	}
+
+	public static function tabs($tabs) {
+		$ret = '<div class="tabs">';
+
+		// Nav bar
+		$ret .= '<div class="tabs_nav">';
+		$first = true;
+		foreach($tabs as $tab_id => $tab) {
+			$ret .= '<div class="tab_nav_item' . ($first ? ' active' : '') . '" id="tab_nav_item_' . $tab_id . '" data-tab-id="' . $tab_id . '">' . $tab['title'] . '</div>';
+			$first = false;
+		}
+		$ret .= '</div>';
+
+		// Tabs content
+		$ret .= '<div class="tabs_content">';
+
+		$first = true;
+		foreach($tabs as $tab_id => $tab) {
+			$ret .= '<div class="tab_content_item' . ($first ? ' active' : '') . '" id="tab_content_item_' . $tab_id . '" data-tab-id="' . $tab_id . '">' . $tab['body'] . '</div>';
+			$first = false;
+		}
+
+		$ret .= '</div>';
+
+
+		$ret .= '</div>';
+
+		return $ret;
+	}
+
+	public static function dependParse($from) {
+		$map = [
+			'atleast' => '>=',
+			'equal' => '=',
+			'any' => '',
+			];
+
+		if (array_key_exists($from, $map)) return $map[$from];
+		else if (in_array($from, $map)) return array_search($from, $map);
+		return '';
+	}
 }
