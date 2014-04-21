@@ -102,3 +102,24 @@
 	padding-bottom: 20px;
 }
 
+
+.uicore-table .table-cell {
+	padding: 5px 10px;
+}
+.uicore-table .table-cell-title {
+	font-weight: bold;
+}
+
+.uicore-table .table-cell-title::after {
+	content: ":";
+}
+
+.uicore-table {
+	padding: 5px 20px;
+	border: 1px solid #efefef;
+}
+
+.uicore_form .sublabel {
+	font-size: 0.8em;
+	color: #555;
+}

@@ -147,4 +147,47 @@ class UiCore {
 		$ret = '<input type="button" value="' . $value . '" onclick="' . $delete_function . '(\'' . $callback_name . '\', \'' . $warning_text . '\', \'' . $redirect_url . '\');" />';
 		return $ret;
 	}
+
+
+	public static function table($table, $head = NULL) {
+		$ret = '<div class="table uicore-table">';
+		if ($head) {
+			$ret .= '<div class="table-row table-head">';
+			foreach($head as $head_item) {
+				$ret .= '<div class="table-cell">' . $head_item . '</div>';
+			}
+			$ret .= '</div>';
+		}
+
+		if (self::isAssoc($table)) {
+			foreach($table as $title => $value) {
+				$ret .= '<div class="table-row">
+					<div class="table-cell table-cell-title">' . $title . '</div>
+					<div class="table-cell table-cell-value">' . $value . '</div>
+					</div>';
+			}
+		}
+		else {
+			foreach($table as $row) {
+				$ret .= '<div class="table-row">';
+				if (isAssoc($row)) {
+					foreach($row as $key => $value) {
+						$ret .= '<div class="table-cell table-cell-' . $key . '">' . $value . '</div>';
+					}
+				}
+				else {
+					foreach($row as $value) {
+						$ret .= '<div class="table-cell">' . $value . '</div>';
+					}
+				}
+				$ret .= '</div>';
+			}
+		}
+		
+		$ret .= '</div>';
+
+
+
+		return $ret;
+	}
 }
