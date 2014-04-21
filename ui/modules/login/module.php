@@ -22,6 +22,7 @@ class Module_login extends Module {
 			$top = 'Logged in as <b>' . $user->name . '</b>';
 			$menu = '';
 			if ($user->can('admin_panel')) $menu .= '<a href="/admin">Administration</a>';
+			if ($user->can('taskmon')) $menu .= '<a href="/taskmon">Task monitor</a>';
 		       	$menu .= '<a href="/logout">Logout</a>';
 		}
 		else {
