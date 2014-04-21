@@ -30,13 +30,14 @@ class ImportDirectory {
 	public static function addToDb($pkg, $root_path = NULL, array $repository = [], array $osversion = [], array $branch = [], array $subgroup = [], $is_latest = false) {
 		$db = MongoConnection::c()->agiliarepo;
 		$p = $pkg->metadata($root_path);
-		$p['repository'] = $repository;
-		$p['osversion'] = $osversion;
-		$p['branch'] = $branch;
-		$p['subgroup'] = $subgroup;
+
+		$p['repositories'][] = ['repository' => $repository, 'osversion' => $osversion, 'branch' => $branch, 'subgroup' => $subgroup];
 		$p['add_date'] = new MongoDate();
+
+		$p['_rev'] = 1;
 		if ($is_latest) $p['latest'] = 1;
 		$db->packages->remove(['md5' => $p['md5']]);
+		$db->package_files->remove(['md5' => $p['md5']]);
 		$db->packages->insert($p);
 		
 		$db->package_files->insert(['md5' => $p['md5'], 'files' => $pkg->filelist()]);
