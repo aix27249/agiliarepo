@@ -28,9 +28,13 @@ TODO
   * <del>Understand UI structure, implement basic one</del>
   * <del>User groups, permissions</del>
   * <del>User management UI</del>
-  * Background worker: subsysem that gets tasks from queue, do them in background, and report about tasks status and current progress
+  * <del>Background worker aka TaskManager: subsysem that gets tasks from queue, do them in background, and report about tasks status and current progress</del>
+  * <del>Task manager UI: task monitor, single task monitor</del>
+  * Package management: edit repository/os/branch/subgroup relationship (copy/move/delete)
+  * Ability to add new packages to repository by user in some way
   * Version comparsion function - perhaps, should port it from old repository
   * Understand how API should be accessed, implement some basic queries as an example
-  * Implement further UI modules - starting with repository listing, package info displaying, import new packages, etc.
+  * Repository index generation: at least old-style packages.xml.xz should be there, try to use json for this
+  * Implement some API functions and try to use it - main goal at this point will be a test if selected API structure is fine enough, or it's ugly and should be changed
   * Think about what's better to do next :)
 
