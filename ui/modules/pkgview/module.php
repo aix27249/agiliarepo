@@ -47,8 +47,21 @@ class Module_pkgview extends RepositoryModule {
 
 		$ret .= '</div>';
 
-		$ret .= '<div class="download"><a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">Download ' . $pkg['filename'] . '</a></div>';
+		// Download link
+		$ret .= '<div class="download">Download package: <a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">' . $pkg['filename'] . '</a></div>';
 
+
+		// Build tree link
+		$abuild_file = NULL;
+		foreach($pkgfiles['files'] as $file) {
+			if (strpos($file, 'usr/src/BuildTrees/')===0 && strpos($file, 'build_tree.tar.xz')!==false) {
+				$abuild_file = $file;
+				break;
+			}
+		}
+		if ($abuild_file) {
+			$ret .= '<div class="download">Download ABUILD: <a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($abuild_file) . '">' . basename($abuild_file) . '</a></div>';
+		}
 
 		// Data in tabs
 		$tabs = [];
