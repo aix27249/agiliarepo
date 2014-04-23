@@ -13,10 +13,17 @@
 .meta_block {
 	display: table;
 	width: 100%;
+}
+
+
+.infoblock {
 	padding: 10px;
 	border: 1px solid #efefef;
 	margin-top: 30px;
 	margin-bottom: 30px;
+
 }
 
-
+.infoblock h3 {
+	margin-top: 0px;
+}

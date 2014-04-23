@@ -3,11 +3,13 @@ Page::loadModule('repository');
 Page::loadModule('uicore');
 class Module_pkgview extends RepositoryModule {
 	static $styles = ['pkgview.css'];
+	static $scripts = ['pkgview.js'];
 	public function run() {
 		$ret = '';
 		$md5 = trim(@$this->page->path[2]);
 		if (strlen($md5)!==32) return 'Не указан идентификатор пакета';
 		$pkg = $this->db->packages->findOne(['md5' => $md5]);
+		if (isset($_POST['__submit_form_id'])) die($this->requestDispatcher($_POST, $pkg));
 		$pkgfiles = $this->db->package_files->findOne(['md5' => $md5]);
 
 		$paths = [];
@@ -17,14 +19,9 @@ class Module_pkgview extends RepositoryModule {
 		$paths = array_unique($paths);
 
 
-		/*
-		foreach($paths as $path) {
-			$ret .= '<div class="path">' . $this->renderPath(explode('/', $path), '') . '</div>';
-		}*/
-
 		$ret .= '<h1>' . $pkg['name'] . '</h1>';
 
-		$ret .= '<div class="description">' . ($pkg['description']!=='' ? $pkg['description'] : $pkg['short_description']) . '</div>';
+		$ret .= '<div class="infoblock description">' . ($pkg['description']!=='' ? $pkg['description'] : $pkg['short_description']) . '</div>';
 		$tags = implode(', ', $pkg['tags']);
 		$meta = [
 			'version' => $pkg['version'],
@@ -38,7 +35,7 @@ class Module_pkgview extends RepositoryModule {
 			'add_date' => date('Y-m-d H:i:s', $pkg['add_date']->sec),
 			];
 
-		$ret .= '<div class="meta_block">';
+		$ret .= '<div class="infoblock meta_block">';
 		foreach($meta as $title => $data) {
 			$ret .= '<div class="meta_row"><div class="meta_title">' . $title . '</div>
 				<div class="meta_data">' . $data . '</div>
@@ -47,8 +44,19 @@ class Module_pkgview extends RepositoryModule {
 
 		$ret .= '</div>';
 
-		// Download link
-		$ret .= '<div class="download">Download package: <a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">' . $pkg['filename'] . '</a></div>';
+
+		$ret .= '<div class="infoblock repository_info"><h3>Repositories</h3><ul>';
+		foreach($paths as $p) {
+			$ret .= '<li><a href="/browser/' . $p . '">' . $p . '</a></li>';
+		}
+
+		$ret .= '</ul></div>';
+
+
+
+		// Downloads
+		$ret .= '<div class="infoblock download_links"><h3>Download</h3>';
+		$ret .= '<div class="download">Package: <a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">' . $pkg['filename'] . '</a></div>';
 
 
 		// Build tree link
@@ -60,8 +68,9 @@ class Module_pkgview extends RepositoryModule {
 			}
 		}
 		if ($abuild_file) {
-			$ret .= '<div class="download">Download ABUILD: <a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($abuild_file) . '">' . basename($abuild_file) . '</a></div>';
+			$ret .= '<div class="download">Build tree: <a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($abuild_file) . '">' . basename($abuild_file) . '</a></div>';
 		}
+		$ret .= '</div>';
 
 		// Data in tabs
 		$tabs = [];
@@ -91,19 +100,128 @@ class Module_pkgview extends RepositoryModule {
 
 		$tabs[] = ['title' => 'Files', 'body' => $code];
 
-	
-		// Repository locations
-		$code = '<ul>';
-		foreach($paths as $p) {
-			$code .= '<li><a href="/browser/' . $p . '">' . $p . '</a></li>';
+		// Edit
+		// ...There will be ajax, lots of it
+		// Prepare table
+
+		$user = Auth::user();
+		if ($user) {
+			$table = [];
+			foreach($pkg['repositories'] as $path) {
+				$args = '\'' . $path['repository'] . '\', \'' . $path['osversion'] . '\', \'' . $path['branch'] . '\', \'' . $path['subgroup'] . '\'';
+				$row = [
+					implode('/', $path), 
+					'<input type="button" value="Move" onclick="pkgMove(' . $args . ');" />',
+					'<input type="button" value="Delete" onclick="pkgDelete(' . $args . ');" />',
+					];
+				$table[] = $row;
+			}
+			$code = UiCore::table($table);
+			$code .= '<input type="button" value="Copy to new location" onclick="pkgCopy();" />';
+
+			$tabs[] = ['title' => 'Edit locations', 'body' => $code];
 		}
 
-		$code .= '</ul>';
-		$tabs[] = ['title' => 'Repositories', 'body' => $code];
+	
 	
 		$ret .= UiCore::tabs($tabs);
 
 		return $ret;
 	}
+
+	private function requestDispatcher($data, $pkg) {
+		$callback = 'process_' . trim($data['__submit_form_id']);
+		if (method_exists($this, $callback)) return $this->$callback($data, $pkg);
+		return 'Call signature ' . $callback . ' unknown';
+	}
+
+	private function process_pkgMoveFormInit($data, $pkg) {
+		$user = Auth::user();
+		$old_location = [];
+		foreach(['repository', 'osversion', 'branch', 'subgroup'] as $k) {
+			if (!isset($data[$k])) return $k . ' is mandatory';
+			$old_location[$k] = trim($data[$k]);
+		}
+
+		$repository = new Repository($data['repository']);
+		if (!$repository->can($user, 'write')) return '<h1>Access denied</h1>Sorry, you have no permissions to edit '. $data[$k] . ' repository';
+
+		$fields = [
+			'repository' => ['type' => 'select', 'label' => 'Repository', 'options' => Repository::getList($user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'osversion' =>  ['type' => 'select', 'label' => 'OS version', 'options' => $repository->osversions($user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'branch' =>  ['type' => 'select', 'label' => 'Branch', 'options' => $repository->branches($data['osversion'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'subgroup' =>  ['type' => 'select', 'label' => 'Subgroup', 'options' => $repository->subgroups($data['osversion'], $data['branch'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			];
+		
+		$code = '<h1>Move package ' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . '</h1>';
+		$code .= 'From: ' . implode('/', [$data['repository'], $data['osversion'], $data['branch'], $data['subgroup']]);
+		foreach ($fields as $key => $desc) {
+			$code .= UiCore::getInput($key, $data[$key], '', $desc);
+		}
+
+		$code .= UiCore::getInput('old_location', json_encode($old_location), '', ['type' => 'hidden']);
+
+
+		$form = UiCore::editForm('pkgMoveFormSave', NULL, $code, '<input type="submit" value="Move" />');
+
+		$ret = '';
+		$ret .= $form;
+
+		return $ret;
+	}
+
+
+	private function process_getFormFieldOptions($data, $pkg) {
+		$user = Auth::user();
+		$permission = $data['permission'];
+		$repository = new Repository($data['repository']);
+		$ret = [
+			'osversion' => $repository->osversions($user, $permission),
+			'branch' => $repository->branches($data['osversion'], $user, $permission),
+			'subgroup' => $repository->subgroups($data['osversion'], $data['branch'], $user, $permission),
+		];
+
+		return json_encode($ret);
+
+	}
+
+	private function process_pkgMoveFormSave($data, $pkg) {
+		$user = Auth::user();
+		$new_location = [];
+		$f = ['repository', 'osversion', 'branch', 'subgroup'];
+		foreach($f as $k) {
+			if (!isset($data[$k])) return $k . ' is mandatory';
+			$new_location[$k] = trim($data[$k]);
+		}
+
+		$old_location = json_decode($data['old_location']);
+
+		foreach($pkg['repositories'] as &$location) {
+			$match = true;
+			foreach($f as $k) {
+				if ($location[$k]!==$old_location->$k) {
+					$match = false;
+					break;
+				}
+			}
+			if ($match) {
+				$location = $new_location;
+
+			}
+		}
+
+
+		self::db()->packages->findAndModify(
+		['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
+		[
+			'$set' => ['repositories' => $pkg['repositories']], 
+			'$inc' => ['_rev' => 1]
+		]);
+
+
+		header('Location: /pkgview/' . $pkg['md5']);
+
+	}
+
 
 }
