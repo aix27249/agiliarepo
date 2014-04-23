@@ -54,11 +54,6 @@ class Repository extends MongoDBAdapter {
 		self::db()->repositories->remove(['name' => $repo_name]);
 	}
 
-	public static function getList() {
-		$repos = self::db()->packages->distinct('repositories.repository');
-		$meta = self::db()->repositories->distinct('name');
-		return array_unique(array_merge($repos, $meta));
-	}
 
 
 	public function __construct ($repo_name) {
@@ -91,16 +86,81 @@ class Repository extends MongoDBAdapter {
 		return ['admin'];
 	}
 
+	public function can($user, $perm) {
+		if ($user==='admin') return true;
+		$whocan = $this->whoCan($perm);
+		if (in_array($user->name, $whocan, true)) return true;
+		if (in_array('@everyone', $whocan, true)) return true;
+		foreach($user->groups as $group) {
+			if (in_array('@' . $group, $whocan, true)) return true;
+		}
+		return false;
+	}
+
 	public function gitRemote() {
 		return @$this->settings['git_remote'];
 	}
 
-	public function osversions() {
+	public function osversions($user = NULL, $permission = NULL) {
 		$defacto = self::db()->packages->distinct('repositories.osversion', ['repositories.repository' => $this->name]);
 		$settings = @$this->settings['osversions'];
-		if ($settings) return array_unique(array_merge($defacto, $settings));
-		else return $defacto;
+		
+		if ($settings) $osversions = array_unique(array_merge($defacto, $settings));
+		else $osversions = $defacto;
+
+		if (!$permission) return $osversions;
+		if (!$user) return [];
+		if (!$this->can($user, $permission)) return [];
+
+		$ret = [];
+		foreach($osversions as $osver) {
+			// TODO: add permission check for specific OS version within that repository
+			$ret[] = $osver;
+		}
+
+		return $ret;
 	}
+
+	public function branches($osversion, $user = NULL, $permission = NULL) {
+		$defacto = self::db()->packages->distinct('repositories.branch', ['repositories.repository' => $this->name]);
+		$settings = @$this->settings['branches'];
+		
+		if ($settings) $branches = array_unique(array_merge($defacto, $settings));
+		else $branches = $defacto;
+
+		if (!$permission) return $branches;
+		if (!$user) return [];
+		if (!$this->can($user, $permission)) return [];
+
+		$ret = [];
+		foreach($branches as $branch) {
+			// TODO: add permission check for specific branch within that repository/osver
+			$ret[] = $branch;
+		}
+
+		return $ret;
+	}
+
+	public function subgroups($osversion, $branch, $user = NULL, $permission = NULL) {
+		$defacto = self::db()->packages->distinct('repositories.subgroup', ['repositories.repository' => $this->name]);
+		$settings = @$this->settings['subgroups'];
+		
+		if ($settings) $subgroups = array_unique(array_merge($defacto, $settings));
+		else $subgroups = $defacto;
+
+		if (!$permission) return $subgroups;
+		if (!$user) return [];
+		if (!$this->can($user, $permission)) return [];
+
+		$ret = [];
+		foreach($subgroups as $sub) {
+			// TODO: add permission check for specific subgroup within that repository/osver/branch
+			$ret[] = $sub;
+		}
+
+		return $ret;
+	}
+
 
 	public function __set($key, $value) {
 		$this->settings[$key] = $value;
@@ -119,5 +179,22 @@ class Repository extends MongoDBAdapter {
 		$this->settings['name'] = $this->name;
 		self::db()->repositories->update(['name' => $this->name], $this->settings, ['upsert' => true]);
 	}
+
+	public static function getList($user = NULL, $permission = NULL) {
+		$repos = self::db()->packages->distinct('repositories.repository');
+		$meta = self::db()->repositories->distinct('name');
+		$all_repos = array_unique(array_merge($repos, $meta));
+
+		if (!$permission) return $all_repos;
+		if (!$user) return [];
+		$ret = [];
+		foreach($all_repos as $reponame) {
+			$rep = new Repository($reponame);
+			if ($rep->can($user, $permission)) $ret[] = $reponame;
+		}
+
+		return $ret;
+	}
+
 }
 
