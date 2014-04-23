@@ -5,6 +5,7 @@
 
 .wrapper .area {
 	width: 1170px;
+	min-width: 1170px;
 	padding-left: 30px;
 	padding-right: 30px;
 	margin-left: auto;

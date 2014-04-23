@@ -1,5 +1,7 @@
 #header_wrapper {
 	background-color: #323232;
+	width: 100%;
+	min-width: 1170px;
 }
 
 #header .block {
