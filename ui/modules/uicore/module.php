@@ -17,18 +17,24 @@ class UiCore {
 		}
 
 		$idclass_str = 'class="input_' . $key . '" id="' . $key . $key_suffix . '" name="' . $key . $key_suffix . '"';
+		$eventstr = '';
+		if (isset($field_desc['events'])) {
+			foreach($field_desc['events'] as $event => $event_code) {
+				$eventstr .= ' ' . $event . '="' . $event_code . '"';
+			}
+		}
 
 		switch($field_desc['type']) {
 		case 'checkbox':
-			$ret .= '<input ' . $idclass_str . ' value="' . (isset($field_desc['setvalue']) ? $field_desc['setvalue'] : '1') . '" type="checkbox"' . (intval($value)===1 ? ' checked' : '') . ' />';
+			$ret .= '<input ' . $idclass_str  . $eventstr . ' value="' . (isset($field_desc['setvalue']) ? $field_desc['setvalue'] : '1') . '" type="checkbox"' . (intval($value)===1 ? ' checked' : '') . ' />';
 			$ret .= '<label for="' . $key . $key_suffix . '">' . $field_desc['label'] . '</label>';
 
 			break;
 		case 'textarea':
-			$ret .= '<textarea ' . $idclass_str . ' placeholder="' . $field_desc['placeholder'] . '">' . htmlspecialchars($value) . '</textarea>';
+			$ret .= '<textarea ' . $idclass_str  . $eventstr . ' placeholder="' . $field_desc['placeholder'] . '">' . htmlspecialchars($value) . '</textarea>';
 			break;
 		case 'select':
-			$ret .= '<select ' . $idclass_str . '>';
+			$ret .= '<select ' . $idclass_str . $eventstr . '>';
 			if (self::isAssoc($field_desc['options'])) {
 				foreach($field_desc['options'] as $o_key => $o_title) {
 					$ret .= '<option value="' . $o_key . '"' . ($value===$o_key ? ' selected' : '') . '>' . $o_title . '</option>';
@@ -44,10 +50,10 @@ class UiCore {
 			break;
 		case 'submit':
 		case 'button':
-			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str . ' value="' . htmlspecialchars($value) . '" />';
+			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str  . $eventstr . ' value="' . htmlspecialchars($value) . '" />';
 			break;
 		default:
-			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str . ' placeholder="' . $field_desc['placeholder'] . '" value="' . htmlspecialchars($value) . '" />';
+			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str  . $eventstr . (isset($field_desc['placeholder']) ? ' placeholder="' . $field_desc['placeholder'] : '') . '" value="' . htmlspecialchars($value) . '" />';
 			break;
 		}
 
@@ -170,7 +176,7 @@ class UiCore {
 		else {
 			foreach($table as $row) {
 				$ret .= '<div class="table-row">';
-				if (isAssoc($row)) {
+				if (self::isAssoc($row)) {
 					foreach($row as $key => $value) {
 						$ret .= '<div class="table-cell table-cell-' . $key . '">' . $value . '</div>';
 					}
