@@ -14,7 +14,7 @@ class ImportDirectory {
 			$pkgfile = trim(fgets($ptr));
 			if ($pkgfile==='') continue;
 			try {
-				$package = new Package($pkgfile);
+				$package = new PackageFile($pkgfile);
 			}
 			catch (Exception $e) {
 				echo "$pkgfile not found\n";

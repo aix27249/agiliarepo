@@ -3,14 +3,14 @@
 /* 
  * AgiliaLinux PHP package handling library
  *
- * Class Package: read different data from *.txz package files 
+ * Class PackageFile: read different data from *.txz package files 
  * WARNING: do not use complex filenames (with spaces, brackets etc) - they passed to shell directly.
  * TODO: fix this issue
  *
  */
 
 require_once 'tgzhandler.class.php';
-class Package {
+class PackageFile {
 	public $filename = NULL;
 	// Checks if file exists
 	public function __construct($filename) {

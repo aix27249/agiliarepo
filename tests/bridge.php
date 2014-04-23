@@ -59,7 +59,7 @@ class RepositoryBridge extends MongoDBAdapter {
 				echo "File $path does not exist\n";
 				return false;
 			}
-			$pkg = new Package($path);
+			$pkg = new PackageFile($path);
 			$p = $pkg->metadata($root_path);
 
 			$new_osver = '8.1';
