@@ -111,13 +111,14 @@ class Module_pkgview extends RepositoryModule {
 				$args = '\'' . $path['repository'] . '\', \'' . $path['osversion'] . '\', \'' . $path['branch'] . '\', \'' . $path['subgroup'] . '\'';
 				$row = [
 					implode('/', $path), 
+					'<input type="button" value="Copy" onclick="pkgCopy(' . $args . ');" />',
 					'<input type="button" value="Move" onclick="pkgMove(' . $args . ');" />',
 					'<input type="button" value="Delete" onclick="pkgDelete(' . $args . ');" />',
 					];
 				$table[] = $row;
 			}
 			$code = UiCore::table($table);
-			$code .= '<input type="button" value="Copy to new location" onclick="pkgCopy();" />';
+			if (count($paths)===0) $code .= '<input type="button" value="New location" onclick="pkgCopy();" />';
 
 			$tabs[] = ['title' => 'Edit locations', 'body' => $code];
 		}
@@ -217,6 +218,67 @@ class Module_pkgview extends RepositoryModule {
 			'$set' => ['repositories' => $pkg['repositories']], 
 			'$inc' => ['_rev' => 1]
 		]);
+
+
+		header('Location: /pkgview/' . $pkg['md5']);
+
+	}
+
+	private function process_pkgCopyFormInit($data, $pkg) {
+		$user = Auth::user();
+	
+		$repository = new Repository($data['repository']);
+
+		$fields = [
+			'repository' => ['type' => 'select', 'label' => 'Repository', 'options' => Repository::getList($user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'osversion' =>  ['type' => 'select', 'label' => 'OS version', 'options' => $repository->osversions($user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'branch' =>  ['type' => 'select', 'label' => 'Branch', 'options' => $repository->branches($data['osversion'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'subgroup' =>  ['type' => 'select', 'label' => 'Subgroup', 'options' => $repository->subgroups($data['osversion'], $data['branch'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			];
+		
+		$code = '<h1>Copy package ' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . ' to:</h1>';
+		$code .= 'From: ' . implode('/', [$data['repository'], $data['osversion'], $data['branch'], $data['subgroup']]);
+		foreach ($fields as $key => $desc) {
+			$code .= UiCore::getInput($key, $data[$key], '', $desc);
+		}
+
+
+
+		$form = UiCore::editForm('pkgCopyFormSave', NULL, $code, '<input type="submit" value="Copy" />');
+
+		$ret = '';
+		$ret .= $form;
+
+		return $ret;
+	}
+
+	private function process_pkgCopyFormSave($data, $pkg) {
+		$user = Auth::user();
+		$new_location = [];
+		$f = ['repository', 'osversion', 'branch', 'subgroup'];
+		foreach($f as $k) {
+			if (!isset($data[$k])) return $k . ' is mandatory';
+			$new_location[$k] = trim($data[$k]);
+		}
+
+		foreach($pkg['repositories'] as &$location) {
+			$match = true;
+			foreach($f as $k) {
+				if ($location[$k]!==$new_location[$k]) {
+					$match = false;
+					break;
+				}
+			}
+		}
+
+		if (!$match) {
+			self::db()->packages->findAndModify(
+			['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
+			[
+				'$addToSet' => ['repositories' => $new_location], 
+				'$inc' => ['_rev' => 1]
+			]);
+		}
 
 
 		header('Location: /pkgview/' . $pkg['md5']);

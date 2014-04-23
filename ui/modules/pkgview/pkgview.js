@@ -7,8 +7,11 @@ function pkgMove(repository, osversion, branch, subgroup) {
 function pkgDelete(repository, osversion, branch, subgroup) {
 }
 
-function pkgCopy() {
-	createPopup('aa');
+function pkgCopy(repository, osversion, branch, subgroup) {
+	$.post(window.location, {'__submit_form_id' : 'pkgCopyFormInit', repository: repository, osversion: osversion, branch: branch, subgroup: subgroup}, function(data) {
+		createPopup(data);
+	});
+
 }
 
 
