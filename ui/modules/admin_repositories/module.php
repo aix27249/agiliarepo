@@ -17,6 +17,7 @@ class Module_admin_repositories extends RepositoryModule {
 
 	public function getList() {
 		$repos = Repository::getList();
+		sort($repos);
 		$ret = '<h1>Repositories</h1>';
 		foreach($repos as $repname) {
 			$ret .= '<li><a href="/admin/repositories/' . $repname . '">' . $repname . '</a></li>';
@@ -37,6 +38,8 @@ class Module_admin_repositories extends RepositoryModule {
 		$table = [
 			'Packages' => $repository->count(),
 			'OS versions' => implode(', ', $repository->osversions()),
+			'Branches' => implode(', ', $repository->branches()),
+			'Subgroups' => implode(', ', $repository->subgroups()),
 			'Owner' => $repository->owner(),
 			'Read access' => implode(', ', $repository->whoCan('read')),
 			'Write access' => implode(', ', $repository->whoCan('write')),
@@ -69,10 +72,19 @@ class Module_admin_repositories extends RepositoryModule {
 			}
 			$repository->setPermissions($permissions);
 			$repository->git_remote = $_POST['git_remote'];
+			foreach(['osversions', 'branches', 'subgroups'] as $k) {
+				$repository->settings[$k] = explode(',', $_POST[$k]);
+				foreach($repository->settings[$k] as &$record) {
+					$record = trim($record);
+				}
+			}
 			$repository->update();
 			$repository = new Repository($repname);
 		}
 		$fields = [
+			'osversions' => ['type' => 'text', 'label' => 'OS versions', 'placeholder' => 'OS versions'],
+			'branches' => ['type' => 'text', 'label' => 'Branches', 'placeholder' => 'Branches'],
+			'subgroups' => ['type' => 'text', 'label' => 'Subgroups', 'placeholder' => 'Subgroups'],
 			'owner' => ['type' => 'text', 'label' => 'Repository owner', 'placeholder' => 'Enter owner username'],
 			'can_read' => ['type' => 'text', 'label' => 'Who can read<br /><span class="sublabel">Comma separated list of users and groups which can read this repository. Groups should be marked with @ at beginning. A special group @everyone means all users</span>', 'placeholder' => 'Who can read?'],
 			'can_write' => ['type' => 'text', 'label' => 'Who can write<br /><span class="sublabel">Comma separated list of users and groups which can make changes to this repository (add/edit/delete packages). Groups should be marked with @ at beginning. A special group @everyone means all users</span>', 'placeholder' => 'Who can write?'],
@@ -81,6 +93,9 @@ class Module_admin_repositories extends RepositoryModule {
 			];
 
 		$values = [
+			'osversions' => implode(', ', $repository->osversions()),
+			'branches' => implode(', ', $repository->branches()),
+			'subgroups' => implode(', ', $repository->subgroups()),
 			'owner' => $repository->owner(),
 			'can_read' => implode(', ', $repository->whoCan('read')),
 			'can_write' => implode(', ', $repository->whoCan('write')),

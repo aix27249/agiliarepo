@@ -2,8 +2,8 @@
 require_once 'mongo.class.php';
 class Repository extends MongoDBAdapter {
 
-	private $name = NULL;
-	private $settings = NULL;
+	public $name = NULL;
+	public $settings = NULL;
 
 	public static function createClone($from, $to, $task = NULL) {
 		$any_found = false;
@@ -27,6 +27,14 @@ class Repository extends MongoDBAdapter {
 				'$addToSet' => ['repositories' => ['$each' => $records]], 
 				'$inc' => ['_rev' => 1]
 				]);
+		}
+
+		// Copy configuration record, if any
+		$configuration = self::db()->repositories->findOne(['name' => $from]);
+		if ($configuration) {
+			unset($configuration['_id']);
+			$configuration['name'] = $to;
+			self::db()->repositories->insert($configuration);
 		}
 		return $any_found;
 	}
@@ -101,9 +109,10 @@ class Repository extends MongoDBAdapter {
 		return @$this->settings['git_remote'];
 	}
 
-	public function osversions($user = NULL, $permission = NULL) {
-		$defacto = self::db()->packages->distinct('repositories.osversion', ['repositories.repository' => $this->name]);
+	public function osversions($user = NULL, $permission = NULL, $force_scan = false) {
 		$settings = @$this->settings['osversions'];
+		$defacto = [];
+		if (!$settings || $force_scan) $defacto = self::db()->packages->distinct('repositories.osversion', ['repositories.repository' => $this->name]);
 		
 		if ($settings) $osversions = array_unique(array_merge($defacto, $settings));
 		else $osversions = $defacto;
@@ -121,9 +130,11 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
-	public function branches($osversion = NULL, $user = NULL, $permission = NULL) {
-		$defacto = self::db()->packages->distinct('repositories.branch', ['repositories.repository' => $this->name]);
+	public function branches($osversion = NULL, $user = NULL, $permission = NULL, $force_scan = false) {
 		$settings = @$this->settings['branches'];
+		$defacto = [];
+
+		if (!$settings || $force_scan) $defacto = self::db()->packages->distinct('repositories.branch', ['repositories.repository' => $this->name]);
 		
 		if ($settings) $branches = array_unique(array_merge($defacto, $settings));
 		else $branches = $defacto;
@@ -141,9 +152,10 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
-	public function subgroups($osversion = NULL, $branch = NULL, $user = NULL, $permission = NULL) {
-		$defacto = self::db()->packages->distinct('repositories.subgroup', ['repositories.repository' => $this->name]);
+	public function subgroups($osversion = NULL, $branch = NULL, $user = NULL, $permission = NULL, $force_scan = false) {
 		$settings = @$this->settings['subgroups'];
+		$defacto = [];
+		if (!$settings || $force_scan) $defacto = self::db()->packages->distinct('repositories.subgroup', ['repositories.repository' => $this->name]);
 		
 		if ($settings) $subgroups = array_unique(array_merge($defacto, $settings));
 		else $subgroups = $defacto;
@@ -180,9 +192,10 @@ class Repository extends MongoDBAdapter {
 		self::db()->repositories->update(['name' => $this->name], $this->settings, ['upsert' => true]);
 	}
 
-	public static function getList($user = NULL, $permission = NULL) {
-		$repos = self::db()->packages->distinct('repositories.repository');
+	public static function getList($user = NULL, $permission = NULL, $force_scan = false) {
 		$meta = self::db()->repositories->distinct('name');
+		$repos = [];
+		if ($force_scan) $repos = self::db()->packages->distinct('repositories.repository');
 		$all_repos = array_unique(array_merge($repos, $meta));
 
 		if (!$permission) return $all_repos;
