@@ -121,7 +121,7 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
-	public function branches($osversion, $user = NULL, $permission = NULL) {
+	public function branches($osversion = NULL, $user = NULL, $permission = NULL) {
 		$defacto = self::db()->packages->distinct('repositories.branch', ['repositories.repository' => $this->name]);
 		$settings = @$this->settings['branches'];
 		
@@ -141,7 +141,7 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
-	public function subgroups($osversion, $branch, $user = NULL, $permission = NULL) {
+	public function subgroups($osversion = NULL, $branch = NULL, $user = NULL, $permission = NULL) {
 		$defacto = self::db()->packages->distinct('repositories.subgroup', ['repositories.repository' => $this->name]);
 		$settings = @$this->settings['subgroups'];
 		
