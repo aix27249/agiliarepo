@@ -5,6 +5,13 @@ function pkgMove(repository, osversion, branch, subgroup) {
 }
 
 function pkgDelete(repository, osversion, branch, subgroup) {
+	if (confirm('Really delete package from ' + repository + '/' + osversion + '/' + branch + '/' + subgroup + '?')) {
+		$.post(window.location, {'__submit_form_id' : 'pkgDeleteFormSave', repository: repository, osversion: osversion, branch: branch, subgroup: subgroup}, function(data) {
+			if (data==='OK') window.location.reload();
+			else createPopup(data);
+		});
+
+	}
 }
 
 function pkgCopy(repository, osversion, branch, subgroup) {

@@ -227,24 +227,34 @@ class Module_pkgview extends RepositoryModule {
 	private function process_pkgCopyFormInit($data, $pkg) {
 		$user = Auth::user();
 	
-		$repository = new Repository($data['repository']);
+		if (isset($data['repository'])) {
+			$repository = new Repository($data['repository']);
+		}
+		else {
+			$reps = Repository::getList($user, 'write');
+			if (count($reps)===0) return 'Sorry, there are no repositories with write permissions for you';
+			$repository = new Repository($reps[0]);
+		}
 
 		$fields = [
 			'repository' => ['type' => 'select', 'label' => 'Repository', 'options' => Repository::getList($user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
 			'osversion' =>  ['type' => 'select', 'label' => 'OS version', 'options' => $repository->osversions($user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
-			'branch' =>  ['type' => 'select', 'label' => 'Branch', 'options' => $repository->branches($data['osversion'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
-			'subgroup' =>  ['type' => 'select', 'label' => 'Subgroup', 'options' => $repository->subgroups($data['osversion'], $data['branch'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'branch' =>  ['type' => 'select', 'label' => 'Branch', 'options' => $repository->branches(@$data['osversion'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
+			'subgroup' =>  ['type' => 'select', 'label' => 'Subgroup', 'options' => $repository->subgroups(@$data['osversion'], @$data['branch'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
 			];
-		
+
 		$code = '<h1>Copy package ' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . ' to:</h1>';
-		$code .= 'From: ' . implode('/', [$data['repository'], $data['osversion'], $data['branch'], $data['subgroup']]);
+
+		if (isset($data['repository'])) {
+			$code .= 'From: ' . implode('/', [$data['repository'], $data['osversion'], $data['branch'], $data['subgroup']]);
+		}
 		foreach ($fields as $key => $desc) {
-			$code .= UiCore::getInput($key, $data[$key], '', $desc);
+			$code .= UiCore::getInput($key, @$data[$key], '', $desc);
 		}
 
 
 
-		$form = UiCore::editForm('pkgCopyFormSave', NULL, $code, '<input type="submit" value="Copy" />');
+		$form = UiCore::editForm('pkgCopyFormSave', NULL, $code, '<input type="submit" value="' . (isset($data['repository']) ? 'Copy' : 'Create location') . '" />');
 
 		$ret = '';
 		$ret .= $form;
@@ -261,6 +271,7 @@ class Module_pkgview extends RepositoryModule {
 			$new_location[$k] = trim($data[$k]);
 		}
 
+		$match = false;
 		foreach($pkg['repositories'] as &$location) {
 			$match = true;
 			foreach($f as $k) {
@@ -284,6 +295,45 @@ class Module_pkgview extends RepositoryModule {
 		header('Location: /pkgview/' . $pkg['md5']);
 
 	}
+
+
+	private function process_pkgDeleteFormSave($data, $pkg) {
+		$user = Auth::user();
+		$rm_location = [];
+		$f = ['repository', 'osversion', 'branch', 'subgroup'];
+		foreach($f as $k) {
+			if (!isset($data[$k])) return $k . ' is mandatory';
+			$rm_location[$k] = trim($data[$k]);
+		}
+
+
+		$newset = [];
+		foreach($pkg['repositories'] as &$location) {
+			$match = true;
+			foreach($f as $k) {
+				if ($location[$k]!==$rm_location[$k]) {
+					$match = false;
+					break;
+				}
+			}
+			if (!$match) {
+				$newset[] = $location;
+			}
+		}
+
+
+		self::db()->packages->findAndModify(
+		['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
+		[
+			'$set' => ['repositories' => $newset], 
+			'$inc' => ['_rev' => 1]
+		]);
+
+
+		return 'OK';
+
+	}
+
 
 
 }
