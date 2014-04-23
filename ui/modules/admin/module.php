@@ -7,7 +7,7 @@ class Module_admin extends AdminModule {
 	public static $styles = ['admin.css'];
 	public function run() {
 
-		if ($this->blockname==='sidebar') return $this->run_sidebar();
+		/*if ($this->blockname==='sidebar') return $this->run_sidebar();*/
 
 		$o = [
 			'users' => 'Users',
