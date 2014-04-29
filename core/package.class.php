@@ -10,6 +10,8 @@
  */
 
 require_once 'tgzhandler.class.php';
+require_once 'mongo.class.php';
+require_once 'strverscmp.class.php';
 class PackageFile {
 	public $filename = NULL;
 	// Checks if file exists
@@ -97,4 +99,101 @@ class PackageFile {
 	}
 
 
+}
+
+
+class Package extends MongoDBObject {
+	public function __construct($data = NULL) {
+		$this->id_key = 'md5';
+		if ($data===NULL) return;
+		if (is_array($data)) {
+			$this->data = $data;
+			return;
+		}
+		$query = ['md5' => $data];
+		$collection = 'packages';
+		$this->load($collection, $query);
+	}
+
+	public static function recheckLatest($packages, $path, $save_inplace = false) {
+
+		$latest = NULL;
+		foreach($packages as $package) {
+			if ($latest===NULL || self::compareVersions($package, $latest)>0) $latest = $package;
+		}
+
+		foreach($packages as &$package) {
+			$is_latest = false;
+			if ($package->md5===$latest->md5) $is_latest = true;
+			$package->setLatest($path, $is_latest);
+			if ($save_inplace) $package->save();
+		}
+		
+
+		return $packages;
+	}
+
+	public static function compareVersions($package1, $package2) {
+		$vcmp = VersionCompare::strverscmp($package1->version, $package2->version);
+		if ($vcmp===0) {
+			$vcmp = VersionCompare::strverscmp($package1->build, $package2->build);
+		}
+		return $vcmp;
+
+	}
+
+	public function __toString() {
+		return $this->name . '-' . $this->version . '-' . $this->arch . '-' . $this->build;
+	}
+
+	public function setLatest($path, $is_latest = true) {
+		list($repository, $osversion, $branch, $subgroup) = explode('/', $path);
+		$this->storeState(false);
+		//echo $this . ' at ' . $path . ': is_latest = ' . ($is_latest ? 'true' : 'false') . "\n";
+		foreach($this->data['repositories'] as &$p) {
+			if ($p['repository']===$repository && $p['osversion']===$osversion && $p['branch'] === $branch && $p['subgroup']===$subgroup) {
+				$p['latest'] = $is_latest;
+			}
+		}
+	}
+
+	public function altVersions($path) {
+		list($repository, $osversion, $branch, $subgroup) = explode('/', $path);
+
+		$query = ['name' => $this->name, 
+			'repositories.repository' => $repository, 
+			'repositories.osversion' => $osversion, 
+			'repositories.branch' => $branch, 
+			'repositories.subgroup' => $subgroup];
+		$archsubset = self::queryArchSet($this->arch);
+		if ($archsubset!==NULL) $query['arch'] = $archsubset;
+		
+		//if (preg_match('/^..*86$/', $this->arch)>0) $query['arch'] = ['$in' => ['x86', 'i386', 'i486', 'i586', 'i686', 'noarch', 'fw']];
+		//else if ($this->arch==='x86_64') $query['arch'] = ['$in' => ['x86_64', 'noarch', 'fw']];
+
+		$packages = self::db()->packages->find($query);
+		$parray = [];
+		foreach($packages as $pitem) {
+			$parray[] = new Package($pitem);
+		}
+		return $parray;
+
+	}
+
+	public static function queryArchSet($arch) {
+		if (preg_match('/^..*86$/', $arch)>0) {
+			$subset = ['$in' => ['x86', 'i386', 'i486', 'i586', 'i686', 'noarch', 'fw']];
+			//echo "Subset for $arch: " . print_r($subset, true) . "\n";
+			return $subset;
+		}
+		else if ($arch==='x86_64') {
+			$subset = ['$in' => ['x86_64', 'noarch', 'fw']];
+			//echo "Subset for $arch: " . print_r($subset, true) . "\n";
+			return $subset;
+		}
+		else {
+			//echo "Subset for $arch: NULL\n";
+			return NULL;
+		}
+	}
 }
