@@ -25,6 +25,11 @@ class VersionCompare {
 		return $d;
 
 	}
+
+	// Returns:
+	// 1: version1 > version2
+	// 0: version1 === version2
+	// -1: version1 < version2
 	public static function strverscmp($version1, $version2) {
 		$d1=self::splitChunks($version1);
 		$d2=self::splitChunks($version2);
