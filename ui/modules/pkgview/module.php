@@ -34,6 +34,9 @@ class Module_pkgview extends RepositoryModule {
 			'package size' => UI::humanizeSize($pkg['compressed_size']),
 			'uncompressed' => Ui::humanizeSize($pkg['installed_size']),
 			'add_date' => date('Y-m-d H:i:s', $pkg['add_date']->sec),
+			'provides' => @$pkg['provides'],
+			'conflicts' => @$pkg['conflicts'],
+			'config_files' => @implode(', ', @$pkg['config_files']),
 			];
 
 		$ret .= '<div class="infoblock meta_block">';
