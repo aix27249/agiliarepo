@@ -24,7 +24,7 @@ function taskmon_poll(task_id) {
 		}
 		if (data.status!='complete' && data.status!='failed' && data.status!='cancelled') {
 			var callback = "taskmon_poll('" + task_id + "')";
-			setTimeout(callback, 1000);
+			setTimeout(callback, 5000);
 		}
 	});
 }
