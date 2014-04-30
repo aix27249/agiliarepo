@@ -14,6 +14,7 @@ class Module_pkgview extends RepositoryModule {
 
 		$paths = [];
 		foreach($pkg['repositories'] as $path) {
+			unset($path['latest']);
 			$paths[] = implode('/', $path);
 		}
 		$paths = array_unique($paths);
@@ -46,8 +47,11 @@ class Module_pkgview extends RepositoryModule {
 
 
 		$ret .= '<div class="infoblock repository_info"><h3>Repositories</h3><ul>';
-		foreach($paths as $p) {
-			$ret .= '<li><a href="/browser/' . $p . '">' . $p . '</a></li>';
+		foreach($pkg['repositories'] as $path) {
+			$latest = @$path['latest'];
+			unset($path['latest']);
+			$p = implode('/', $path);
+			$ret .= '<li><a href="/browser/' . $p . '">' . $p . '</a>' . ($latest ? ' (latest)' : '') . '</li>';
 		}
 
 		$ret .= '</ul></div>';
