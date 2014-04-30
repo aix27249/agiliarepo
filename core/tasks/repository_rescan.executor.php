@@ -8,11 +8,14 @@ class RepositoryRescanTask extends AsyncTask {
 
 		$count = self::db()->packages->count();
 		$packages = self::db()->packages->find();
+		$pkgdata = iterator_to_array($packages);
+		//$packages->immortal(true); // Madness? Madness.. this is Mongo!
 		$counter = 0;
-		foreach($packages as $pkg) {
+		foreach($pkgdata as $pkg) {
 			$counter++;
 			$package = new Package($pkg);
 			$this->setProgress($counter, $count, 'Checking ' . $counter . '/' . $count . ': '. $package);
+			
 			$package_file = new PackageFile($package->fspath());
 			$metadata = $package_file->metadata(ServerSettings::$root_path);
 			$package->provides = $metadata['provides'];
