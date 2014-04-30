@@ -51,6 +51,9 @@ class PackageFile {
 			'installed_size' => $this->datasize(),
 			'filename' => $filename,
 			'location' => $location,
+			'provides' => trim($xml->provides),
+			'conflicts' => trim($xml->conflicts),
+			'config_files' => [], // Will fill later
 			'md5' => $this->md5(),
 			];
 
@@ -64,6 +67,11 @@ class PackageFile {
 
 		foreach($xml->tags->children() as $tag) {
 			$data['tags'][] = trim($tag);
+		}
+		if (@count(@$xml->config_files->children())>0) {
+			foreach(@$xml->config_files->children() as $config_file) {
+				$data['config_files'][] = trim($config_file);
+			}
 		}
 
 		return $data;
@@ -195,5 +203,13 @@ class Package extends MongoDBObject {
 			//echo "Subset for $arch: NULL\n";
 			return NULL;
 		}
+	}
+
+	public function fspath() {
+		return ServerSettings::$root_path . '/' . $this->location. '/' . $this->filename;
+	}
+
+	public function packageFile() {
+		return new PackageFile($this->fspath());
 	}
 }
