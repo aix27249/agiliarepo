@@ -101,8 +101,10 @@ class Module_index extends RepositoryModule {
 		if ($pos===false) die('Invalid path');
 		$rpath = array_slice($this->page->path, $pos+1);
 		$fullpath = SiteSettings::$root_path . '/' . implode('/', $rpath);
+		$realpath = realpath($fullpath);
+		if (strpos($realpath, SiteSettings::$root_path)!==0) die('Invalid path');
 		$filename = $rpath[(count($rpath)-1)];
-		if (!file_exists($fullpath)) die($fullpath . ' does not exist');
+		if (!file_exists($realpath)) die($fullpath . ' does not exist');
 	
 		header('Content-Description: File Transfer');
 		header('Content-Type: application/octet-stream');
@@ -111,8 +113,8 @@ class Module_index extends RepositoryModule {
 		header('Expires: 0');
 		header('Cache-Control: must-revalidate');
 		header('Pragma: public');
-		header('Content-Length: ' . filesize($fullpath));
-		readfile($fullpath);
+		header('Content-Length: ' . filesize($realpath));
+		readfile($realpath);
 
 
 		die();
