@@ -14,5 +14,9 @@
 }
 
 
-.pkglist li:hover a {
+.pkglist .repos {
+	font-size: 0.8em;
+	overflow: hidden;
+	white-space: nowrap;
+	color: #666;
 }

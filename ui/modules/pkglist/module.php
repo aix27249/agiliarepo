@@ -20,8 +20,28 @@ class Module_pkglist extends RepositoryModule {
 
 	}
 
+	private static function renderItemComplex($pkg, $base_repo = NULL) {
+		$paths = [];
+		foreach($pkg['repositories'] as $path) {
+
+			if ($base_repo && $path['repository']!==$base_repo) continue;
+			$paths[] = implode('/', $path);
+		}
+		$path_links = implode(', ', $paths);
+		return '<li><a class="pkglink" href="/pkgview/' . $pkg['md5'] . '">
+			<div class="title">' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . '</div>
+			<div class="repos">' . $path_links . '</div>
+			</a></li>';
+
+	}
+
 	private static function renderItemSimple($pkg) {
-		return '<li><a href="/pkgview/' . $pkg['md5'] . '">' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['build'] . ' (' . $pkg['arch'] . ')</a></li>';
+		$paths = [];
+		foreach($pkg['repositories'] as $path) {
+			$paths[] = implode('/', $path);
+		}
+		$path_links = implode(', ', $paths);
+		return '<li><a class="pkglink" href="/pkgview/' . $pkg['md5'] . '">' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . '</a></li>';
 
 	}
 
