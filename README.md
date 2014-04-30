@@ -30,11 +30,11 @@ TODO
   * <del>User management UI</del>
   * <del>Background worker aka TaskManager: subsysem that gets tasks from queue, do them in background, and report about tasks status and current progress</del>
   * <del>Task manager UI: task monitor, single task monitor</del>
-  * Package management: edit repository/os/branch/subgroup relationship (copy/move/delete)
+  * <del>Package management: edit repository/os/branch/subgroup relationship (copy/move/delete)</del>
   * Ability to add new packages to repository by user in some way
-  * Version comparsion function - perhaps, should port it from old repository
+  * <del>Version comparsion function - perhaps, should port it from old repository</del>
   * Understand how API should be accessed, implement some basic queries as an example
-  * Repository index generation: at least old-style packages.xml.xz should be there, try to use json for this
+  * Repository index generation: at least old-style packages.xml.xz should be there, try to use json for this. News: JSON is very good, but mpkg wants xml for now. Json implemented in general, xml: work in progress.
   * Implement some API functions and try to use it - main goal at this point will be a test if selected API structure is fine enough, or it's ugly and should be changed
   * Think about what's better to do next :)
 
