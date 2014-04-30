@@ -34,13 +34,17 @@ class Module_taskmon extends RepositoryModule {
 	public static $styles = ['taskmon.css'];
 
 	public function run() {
+		$query = [];
 		if (isset($this->page->path[2])) {
 			if ($this->page->path[2]==='poll') {
 				die($this->poll(@$this->page->path[3]));
 			}
+			if ($this->page->path[2]==='active') {
+				$query = ['status' => ['$nin' => ['complete']]];
+			}
 		}
 
-		$tasks = TaskManager::tasks();
+		$tasks = TaskManager::tasks($query);
 		$ret = '<div class="taskmanager">';
 		foreach($tasks as $task) {
 			$ret .= TaskMonitor::taskProgress($task, false); 
