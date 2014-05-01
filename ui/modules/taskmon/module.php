@@ -12,7 +12,7 @@ class TaskMonitor extends Module_taskmon {
 		}
 
 		$ret = '<div class="taskprogress" id="taskprogress_' . $task->_id . '" data-task-id="' . $task->_id . '">';
-		$ret .= '<div class="task_data">ID: ' . $task->_id . ', type: ' . $task->type . '</div>
+		$ret .= '<div class="task_data">ID: <a href="/taskmon/view/' .$task->_id . '">' . $task->_id . '</a>, type: ' . $task->type . '</div>
 			<div class="task_status">' . $task->status . '</div>';
 		$ret .= '<div class="task_description">' . $task->description . '</div>';
 
@@ -41,6 +41,9 @@ class Module_taskmon extends RepositoryModule {
 			}
 			if ($this->page->path[2]==='active') {
 				$query = ['status' => ['$nin' => ['complete']]];
+			}
+			else if ($this->page->path[2]==='view') {
+				$query = ['_id' => new MongoId($this->page->path[3])];
 			}
 		}
 
