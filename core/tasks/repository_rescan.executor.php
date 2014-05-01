@@ -16,12 +16,18 @@ class RepositoryRescanTask extends AsyncTask {
 			$package = new Package($pkg);
 			$this->setProgress($counter, $count, 'Checking ' . $counter . '/' . $count . ': '. $package);
 			
-			$package_file = new PackageFile($package->fspath());
-			$metadata = $package_file->metadata(ServerSettings::$root_path);
-			$package->provides = $metadata['provides'];
-			$package->conflicts = $metadata['conflicts'];
-			$package->config_files = $metadata['config_files'];
-			$package->save();
+			try {
+				$package_file = new PackageFile($package->fspath());
+				$metadata = $package_file->metadata(ServerSettings::$root_path);
+				$package->provides = $metadata['provides'];
+				$package->conflicts = $metadata['conflicts'];
+				$package->config_files = $metadata['config_files'];
+			}
+			catch (Exception $e) {
+				echo $package . ": file not found\n";
+				$package->notfound = true;
+				$package->save();
+			}
 			
 		}
 		$this->setStatus('complete', 'Finished processing ' . $counter . ' files of ' . $count);
