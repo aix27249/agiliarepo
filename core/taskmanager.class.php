@@ -45,7 +45,8 @@ class AsyncTask extends MongoDBAdapter {
 		return dirname(__FILE__) . '/tasks/' . $this->type . '.executor.php';
 	}
 
-	public function setPid($pid) {
+	public function setPid($pid = NULL) {
+		if (!$pid) $pid = getmypid();
 		$this->pid = $pid;
 		$this->update();
 	}
@@ -86,11 +87,10 @@ class TaskRunner extends MongoDBAdapter {
 			return false;
 		}
 		echo "Executor found: $executor, running\n";
-		$cmd = 'nohup  php ' . $executor . ' ' . $task->_id . ' >> /tmp/agiliarepo_taskmanager.log 2>&1 &';
+		$cmd = 'nohup  php ' . $executor . ' ' . $task->_id . ' >> /tmp/agiliarepo_taskmanager.log 2>&1 & ; echo $?';
 		echo "Command: $cmd\n";
-		$pid = shell_exec($cmd);
+		shell_exec($cmd);
 		echo "Task started, pid: [$pid]\n";
-		$task->setPid($pid);
 		return true;
 
 	}
