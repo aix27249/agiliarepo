@@ -51,3 +51,13 @@ $(document).ready(function() {
 		$('#tab_nav_item_' + tab_id).addClass('active');
 	});
 });
+
+
+function removePopup() {
+	$('.popup, .popup_shadow').remove();
+}
+function createPopup(code) {
+	$('body').append('<div class="popup" id="popup">' + code + '</div><div class="popup_shadow" id="popup_shadow" onclick="removePopup();"></div>');
+}
+
+

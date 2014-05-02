@@ -1,17 +1,22 @@
 .popup {
 	position: fixed;
 	overflow: auto;
-	padding: 10px;
-	width: 500px;
-	height: 400px;
+	padding: 30px 40px;
+	width: 900px;
+	min-height: 200px;
 	box-shadow: 0px 0px 10px #333;
 	background: white;
 	top: 50%;
 	left: 50%;
-	margin-left: -250px;
-	margin-top: -200px;
+	margin-left: -470px;
+	margin-top: -210px;
 	z-index: 10;
+	border-radius: 10px;
 
+}
+
+.popup h1:first-child {
+	margin-top: 0px;
 }
 
 .popup_shadow {

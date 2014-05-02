@@ -48,13 +48,6 @@ function pkgFormUpdate() {
 	});
 }
 
-function createPopup(code) {
-	$('body').append('<div class="popup" id="popup">' + code + '</div><div class="popup_shadow" id="popup_shadow" onclick="removePopup();"></div>');
-}
-
-function removePopup() {
-	$('.popup, .popup_shadow').remove();
-}
 
 
 
