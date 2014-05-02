@@ -51,8 +51,8 @@ class PackageFile {
 			'installed_size' => $this->datasize(),
 			'filename' => $filename,
 			'location' => $location,
-			'provides' => trim($xml->provides),
-			'conflicts' => trim($xml->conflicts),
+			'provides' => [trim($xml->provides)],
+			'conflicts' => [trim($xml->conflicts)],
 			'config_files' => [], // Will fill later
 			'md5' => $this->md5(),
 			];
