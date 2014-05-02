@@ -8,6 +8,8 @@ class Module_pkgview extends RepositoryModule {
 		$ret = '';
 		$md5 = trim(@$this->page->path[2]);
 		if (strlen($md5)!==32) return 'Не указан идентификатор пакета';
+		$package = new Package($md5);
+		// TODO: use $package object everywhere
 		$pkg = $this->db->packages->findOne(['md5' => $md5]);
 		if (isset($_POST['__submit_form_id'])) die($this->requestDispatcher($_POST, $pkg));
 		$pkgfiles = $this->db->package_files->findOne(['md5' => $md5]);
@@ -34,8 +36,8 @@ class Module_pkgview extends RepositoryModule {
 			'package size' => UI::humanizeSize($pkg['compressed_size']),
 			'uncompressed' => Ui::humanizeSize($pkg['installed_size']),
 			'add_date' => date('Y-m-d H:i:s', $pkg['add_date']->sec),
-			'provides' => @$pkg['provides'],
-			'conflicts' => @$pkg['conflicts'],
+			'provides' => implode(', ', $pkg['provides']),
+			'conflicts' => implode(', ', $pkg['conflicts']),
 			'config_files' => @implode(', ', @$pkg['config_files']),
 			];
 
@@ -106,6 +108,27 @@ class Module_pkgview extends RepositoryModule {
 		$code .= '</ol></div>';
 
 		$tabs[] = ['title' => 'Files', 'body' => $code];
+
+		// Other versions
+		$code = '<div id="otherversions"><ol>';
+		foreach($package->repositories as $patharray) {
+			if (isset($patharray['latest'])) unset($patharray['latest']);
+			$path = implode('/', $patharray);
+			$section = '';
+			$section_count = 0;
+			foreach($package->altVersions($path) as $altpackage) {
+				if ($altpackage->md5==$package->md5) continue;
+				$section_count++;
+				$section .= '<li><a href="/pkgview/fileview/' . $altpackage->md5 . '">' . $altpackage . '</a></li>';
+			}
+			if ($section_count>0) {
+				$code .= '<h3>' . $path . '</h3>' . $section;
+			}
+		}
+		$code .= '</ol></div>';
+
+		$tabs[] = ['title' => 'Other versions', 'body' => $code];
+
 
 		// Edit
 		// ...There will be ajax, lots of it
