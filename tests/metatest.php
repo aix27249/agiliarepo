@@ -1,10 +1,6 @@
 <?php
 require_once '../core/bootstrap.php';
 
-$package = new Package('cc169d8cf40788e21d8ddf97db16c0c1');
-$package_file = new PackageFile($package->fspath());
-$meta = $package_file->metadata(ServerSettings::$root_path);
-
-print_r($meta);
-$package->provides = $meta['provides'];
+$package = new Package('d47b652b38e95003b11f1f7a694c3ae1');
+$package->provides = ['xfburn'];
 $package->save();
