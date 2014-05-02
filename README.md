@@ -31,7 +31,7 @@ TODO
   * <del>Background worker aka TaskManager: subsysem that gets tasks from queue, do them in background, and report about tasks status and current progress</del>
   * <del>Task manager UI: task monitor, single task monitor</del>
   * <del>Package management: edit repository/os/branch/subgroup relationship (copy/move/delete)</del>
-  * Ability to add new packages to repository by user in some way
+  * <del>Ability to add new packages to repository by user in some way</del>
   * <del>Version comparsion function - perhaps, should port it from old repository</del>
   * <del>Understand how API should be accessed, implement some basic queries as an example</del>
   * Repository index generation: at least old-style packages.xml.xz should be there, try to use json for this. News: JSON is very good, but mpkg wants xml for now. Json implemented in general, xml: work in progress.
