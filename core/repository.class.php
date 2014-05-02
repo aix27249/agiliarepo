@@ -209,5 +209,11 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
+	public function defaultPath($prefix = '') {
+		if ($prefix!='' && strrpos($prefix, '/')!==strlen($prefix)-1) $prefix .= '/';
+		if (isset($this->settings['default_path'])) return $prefix . $this->settings['default_path'];
+		return $prefix . $this->name;
+	}
+
 }
 
