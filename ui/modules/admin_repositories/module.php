@@ -4,15 +4,23 @@ Page::loadModule('repository');
 Page::loadModule('uicore');
 Page::loadModule('taskmon');
 class Module_admin_repositories extends RepositoryModule {
+	public static $scripts = ['admin_repositories.js'];
 	public function run() {
 		if ($this->blockname==='sidebar') return $this->run_sidebar();
+
 		if (isset($this->page->path[3])) return $this->repository($this->page->path[3]);
+
+		if (isset($_POST['__submit_form_id'])) {
+			if ($_POST['__submit_form_id']==='create_repository_form') die($this->create_form());
+			if ($_POST['__submit_form_id']==='create_repository') die($this->createRepository($_POST['repository']));
+		}
 
 		return $this->getList();
 	}
 
 	public function run_sidebar() {
 		if (isset($this->page->path[3])) return $this->getList();
+		return '<a href="javascript:admin_repositories.create();">Create new repository</a>';
 	}
 
 	public function getList() {
@@ -178,7 +186,28 @@ class Module_admin_repositories extends RepositoryModule {
 		$ret .= UiCore::editForm('repository_delete', NULL, $code, '<input type="submit" value="Confirm repository delete" />');
 		return $ret;
 
+	}
 
+	public function create_form() {
+		$ret = '<h1>Create new repository</h1>';
+		$ret .= '<div class="uicore_form">';
+		$ret .= UiCore::getInput('repository', '', '', ['type' => 'text', 'label' => 'Enter new repository name', 'placeholder' => 'Repository name']);
+		$ret .= UiCore::getInput('create_button', 'Create', '', ['type' => 'button', 'events' => ['onclick' => 'admin_repositories.createExec();']]);
 
+		$ret .= '</div>';
+
+		return $ret;
+
+	}
+
+	public function createRepository($repository_name) {
+		$dupe = self::db()->repositories->findOne(['name' => $repository_name]);
+		if ($dupe) return 'Repository ' . $repository_name . ' already exists, please enter another name';
+
+		$repository = new Repository($repository_name);
+		$user = Auth::user();
+		$repository->owner = $user->name;
+		$repository->update();
+		return 'OK';
 	}
 }
