@@ -48,22 +48,44 @@ class Module_index extends RepositoryModule {
 	}
 
 	public function xml($packages, $as_file = false) {
-		$xml = new SimpleXMLElement('<repository />');
+		$xml = new SimpleXMLElement('<?xml version="1.0" encoding="utf-8"?><repository />');
 
 		$counter = 0;
 		foreach($packages as $pkg) {
 			$counter++;
 			$xmlpkg = $xml->addChild('package');
-			foreach(['name', 'version', 'arch', 'build', 'md5', 'filename', 'provides', 'conflicts', 'short_description', 'description', 'compressed_size', 'installed_size', 'location'] as $key) {
+			foreach(['name', 'version', 'arch', 'build', 'md5', 'filename', 'short_description', 'description', 'compressed_size', 'installed_size', 'location'] as $key) {
 				if (!isset($pkg[$key])) continue;
 				// TODO: handle location correctly: mpkg assumes that location is relative to repository index, even if an absolute path with http:// is specified. The only way to do that is map somehow 
 				if ($key!=='location') $xmlpkg->$key = $pkg[$key];
 				else $xmlpkg->$key = '__pr__/' . $pkg[$key];
 			}
 
+			if (isset($pkg['conflicts'])) {
+				$xmlpkg->conflicts=$pkg['conflicts'][0];
+			}
+			if (isset($pkg['provides'])) {
+				$xmlpkg->provides=$pkg['provides'][0];
+			}
+			if (isset($pkg['config_files'])) {
+				$xmlconfig = $xmlpkg->addChild('config_files');
+				$config_files = array_unique($pkg['config_files']);
+				foreach($config_files as $conf_file) {
+					$xmlconfig->addChild('conf_file', $conf_file);
+
+				}
+			}
+
+			$maintainer = $xmlpkg->addChild('maintainer');
+			$maintainer->email = $pkg['maintainer']['email'];
+			$maintainer->name = $pkg['maintainer']['name'];
+
+
+
+
 			$deps = $xmlpkg->addChild('dependencies');
 			foreach($pkg['dependencies'] as $pkgdep) {
-				$dep = $deps->addChild('dependency');
+				$dep = $deps->addChild('dep');
 				$dep->addChild('name', $pkgdep['name']);
 				$dep->addChild('condition', $pkgdep['condition']);
 				$dep->addChild('version', $pkgdep['version']);
@@ -73,25 +95,25 @@ class Module_index extends RepositoryModule {
 				$tags->addChild('tag', $tag);
 			}
 
+			$xmlpkg->distro_version = $pkg['repositories'][0]['osversion'];
+
 			//break; // DEBUG
 
 		}
 
-		//$dom = dom_import_simplexml($xml)->ownerDocument;
-		//$dom->formatOutput = true;
+		$dom = dom_import_simplexml($xml)->ownerDocument;
+		$dom->formatOutput = true;
 		if ($as_file) {
 			$tmpfile = '/tmp/xmltest.xml';
 			$xzfile = $tmpfile . '.xz';
 			unlink($xzfile);
-			file_put_contents($tmpfile, $xml->asXML());
+			file_put_contents($tmpfile, $dom->saveXML());
 			system('xz ' . $tmpfile);
 			header('Content-Length: ' . filesize($xzfile));
 			readfile($xzfile);
 			die();
 		}
 		else {
-			$dom = dom_import_simplexml($xml)->ownerDocument;
-			$dom->formatOutput = true;
 			die($dom->saveXML());
 		}
 	}
