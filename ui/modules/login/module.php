@@ -21,6 +21,7 @@ class Module_login extends Module {
 			if (isset($_POST['ajax'])) die('OK');
 			$top = 'Logged in as <b>' . $user->name . '</b>';
 			$menu = '';
+			if ($user->can('add_packages')) $menu .= '<a href="/incoming">Incoming</a>';
 			if ($user->can('admin_panel')) $menu .= '<a href="/admin">Administration</a>';
 			if ($user->can('taskmon')) $menu .= '<a href="/taskmon">Task monitor</a>';
 		       	$menu .= '<a href="/logout">Logout</a>';
