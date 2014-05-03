@@ -19,12 +19,14 @@ class Module_api extends RepositoryModule {
 		die($err_text);
 	}
 
+	// Test call: returns call arguments
 	public function test_call($args) {
 		die(print_r($args, true));
 	}
 
+	// Repository call dispatcher (redirect to list and info)
 	public function repositories_call($args) {
-		$valid_calls = ['list', 'info'];
+		$valid_calls = ['list', 'info', 'packages'];
 		if (count($args)===0) {
 			return 'Valid subcalls: ' . implode(', ', $valid_calls);
 		}
@@ -50,4 +52,48 @@ class Module_api extends RepositoryModule {
 		return json_encode($repository->settings(), JSON_PRETTY_PRINT);
 
 	}
+	public function repositories_call_packages($args) {
+		if (!isset($args[0])) return $this->error('400 Bad Request', 'Repository name not specified');
+		$query = ['repositories.repository' => $args[0]];
+		$opts = $_GET;
+		if (isset($opts['latest'])) $query['repositories.latest'] = true;
+		if (isset($opts['osversion'])) $query['repositories.osversion'] = $opts['osversion'];
+		if (isset($opts['branch'])) $query['repositories.branch'] = $opts['branch'];
+		if (isset($opts['subgroup'])) $query['repositories.subgroup'] = $opts['subgroup'];
+	
+		$pkgs = self::db()->packages->distinct('md5', $query);
+		return json_encode($pkgs, JSON_PRETTY_PRINT);
+	}
+
+	// Packages call dispatcher
+	public function packages_call($args) {
+		$valid_calls = ['info', 'files', 'url'];
+		if (count($args)===0) {
+			return 'Valid subcalls: ' . implode(', ', $valid_calls);
+		}
+
+		if (!in_array($args[0], $valid_calls, true)) return $this->error('400 Bad Request', 'Invalid call: ' . $args[0] . ' is not a valid method');
+
+		$method = 'packages_call_' . $args[0];
+		return $this->$method(array_slice($args, 1));
+	}
+	public function packages_call_info($args) {
+		$md5 = $args[0];
+		$pkg = self::db()->packages->findOne(['md5' => $md5]);
+		return json_encode($pkg, JSON_PRETTY_PRINT);
+	}
+
+	public function packages_call_files($args) {
+		$md5 = $args[0];
+		$pkg = self::db()->package_files->findOne(['md5' => $md5]);
+		return json_encode($pkg, JSON_PRETTY_PRINT);
+	}
+	public function packages_call_url($args) {
+		$md5 = $args[0];
+		$package = new Package($md5);
+
+		return '/pkgindex/__pr__/' . $package->location . '/' . $package->filename;
+	}
+
+
 }
