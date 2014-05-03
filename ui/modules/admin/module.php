@@ -14,6 +14,7 @@ class Module_admin extends AdminModule {
 			'users' => 'Users',
 			'groups' => 'Groups',
 			'repositories' => 'Repositories',
+			'actions' => 'Actions',
 		];
 
 		$ret = '<h1>Administration</h1>';

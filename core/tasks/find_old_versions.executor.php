@@ -11,6 +11,9 @@ class FindOldVersionsTask extends AsyncTask {
 		if (isset($this->options['repositories'])) $repositories = $this->options['repositories'];
 		else $repositories = Repository::getList();
 
+		$package_name = NULL;
+		if (isset($this->options['package_name'])) $package_name = trim($this->options['package_name']);
+
 		$archsets = ['i686' => Package::queryArchSet('i686'), 'x86_64' => Package::queryArchSet('x86_64')];
 		$checkcount = 0;
 		foreach($repositories as $reponame) {
@@ -29,7 +32,10 @@ class FindOldVersionsTask extends AsyncTask {
 								'repositories.subgroup' => $subgroup,
 								'arch' => $archset
 								];
-							$pnames = self::db()->packages->distinct('name', $query);
+							if (trim($package_name)!=='') $pnames = [$package_name];
+							else {
+								$pnames = self::db()->packages->distinct('name', $query);
+							}
 							$count += count($pnames);
 						}
 					}
@@ -52,7 +58,8 @@ class FindOldVersionsTask extends AsyncTask {
 								'arch' => $archset
 								];
 
-							$pnames = self::db()->packages->distinct('name', $query);
+							if (trim($package_name)!=='') $pnames = [$package_name];
+							else $pnames = self::db()->packages->distinct('name', $query);
 							foreach($pnames as $package_name) {
 								$pkg = self::db()->packages->findOne(['name' => $package_name, 'arch' => $archset]);
 								$package = new Package($pkg);
