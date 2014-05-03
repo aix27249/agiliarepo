@@ -192,6 +192,12 @@ class Repository extends MongoDBAdapter {
 		self::db()->repositories->update(['name' => $this->name], $this->settings, ['upsert' => true]);
 	}
 
+	public function setSettings($settings) {
+		unset($settings['_id']);
+		$settings['name'] = $this->name;
+		$this->settings = $settings;
+	}
+
 	public static function getList($user = NULL, $permission = NULL, $force_scan = false) {
 		$meta = self::db()->repositories->distinct('name');
 		$repos = [];
