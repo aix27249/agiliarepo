@@ -80,8 +80,10 @@ abstract class MongoDBObject extends MongoDBAdapter {
 		
 		$searchquery = 	[
 			$this->id_key => $this->data[$this->id_key], 
-			'_rev' => $this->data['_rev']
 			]; 
+		if (isset($this->data['_rev'])) {
+			$searchquery['_rev'] = $this->data['_rev'];
+		}
 
 		$setquery = [
 			'$set' => $changeset, 
