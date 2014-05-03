@@ -212,4 +212,8 @@ class Package extends MongoDBObject {
 	public function packageFile() {
 		return new PackageFile($this->fspath());
 	}
+
+	public function packageFiles() {
+		return self::db()->package_files->findOne(['md5' => $this->md5]);
+	}
 }

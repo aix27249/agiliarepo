@@ -9,36 +9,34 @@ class Module_pkgview extends RepositoryModule {
 		$md5 = trim(@$this->page->path[2]);
 		if (strlen($md5)!==32) return 'Не указан идентификатор пакета';
 		$package = new Package($md5);
-		// TODO: use $package object everywhere
-		$pkg = $this->db->packages->findOne(['md5' => $md5]);
-		if (isset($_POST['__submit_form_id'])) die($this->requestDispatcher($_POST, $pkg));
-		$pkgfiles = $this->db->package_files->findOne(['md5' => $md5]);
+		if (isset($_POST['__submit_form_id'])) die($this->requestDispatcher($_POST, $package));
+		$pkgfiles = $package->packageFiles();//$this->db->package_files->findOne(['md5' => $md5]);
 
 		$paths = [];
-		foreach($pkg['repositories'] as $path) {
+		foreach($package->repositories as $path) {
 			unset($path['latest']);
 			$paths[] = implode('/', $path);
 		}
 		$paths = array_unique($paths);
 
 
-		$ret .= '<h1>' . $pkg['name'] . '</h1>';
+		$ret .= '<h1>' . $package . '</h1>';
 
-		$ret .= '<div class="infoblock description">' . ($pkg['description']!=='' ? $pkg['description'] : $pkg['short_description']) . '</div>';
-		$tags = implode(', ', $pkg['tags']);
+		$ret .= '<div class="infoblock description">' . ($package->description!=='' ? $package->description : $package->short_description) . '</div>';
+		$tags = implode(', ', $package->tags);
 		$meta = [
-			'version' => $pkg['version'],
-			'build' => $pkg['build'],
-			'architecture' => $pkg['arch'],
-			'add_date' => date('Y-m-d H:i', @$pkg['add_date']->sec),
+			'version' => $package->version,
+			'build' => $package->build,
+			'architecture' => $package->arch,
+			'add_date' => date('Y-m-d H:i', $package->add_date->sec),
+			'added_by' => $package->added_by,
 			'tags' => $tags,
-			'md5' => $pkg['md5'],
-			'package size' => UI::humanizeSize($pkg['compressed_size']),
-			'uncompressed' => Ui::humanizeSize($pkg['installed_size']),
-			'add_date' => date('Y-m-d H:i:s', $pkg['add_date']->sec),
-			'provides' => implode(', ', $pkg['provides']),
-			'conflicts' => implode(', ', $pkg['conflicts']),
-			'config_files' => @implode(', ', @$pkg['config_files']),
+			'md5' => $package->md5,
+			'package size' => UI::humanizeSize($package->compressed_size),
+			'uncompressed' => Ui::humanizeSize($package->installed_size),
+			'provides' => implode(', ', $package->provides),
+			'conflicts' => implode(', ', $package->conflicts),
+			'config_files' => implode(', ', $package->config_files),
 			];
 
 		$ret .= '<div class="infoblock meta_block">';
@@ -52,7 +50,7 @@ class Module_pkgview extends RepositoryModule {
 
 
 		$ret .= '<div class="infoblock repository_info"><h3>Repositories</h3><ul>';
-		foreach($pkg['repositories'] as $path) {
+		foreach($package->repositories as $path) {
 			$latest = @$path['latest'];
 			unset($path['latest']);
 			$p = implode('/', $path);
@@ -65,7 +63,7 @@ class Module_pkgview extends RepositoryModule {
 
 		// Downloads
 		$ret .= '<div class="infoblock download_links"><h3>Download</h3>';
-		$ret .= '<div class="download">Package: <a href="' . SiteSettings::$web_root_path . '/' . $pkg['location'] . '/' . $pkg['filename'] . '">' . $pkg['filename'] . '</a></div>';
+		$ret .= '<div class="download">Package: <a href="' . SiteSettings::$web_root_path . '/' . $package->location . '/' . $package->filename . '">' . $package->filename . '</a></div>';
 
 
 		// Build tree link
@@ -77,7 +75,7 @@ class Module_pkgview extends RepositoryModule {
 			}
 		}
 		if ($abuild_file) {
-			$ret .= '<div class="download">Build tree: <a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($abuild_file) . '">' . basename($abuild_file) . '</a></div>';
+			$ret .= '<div class="download">Build tree: <a href="/fileview/' . $package->md5 . '?f=' . urlencode($abuild_file) . '">' . basename($abuild_file) . '</a></div>';
 		}
 		$ret .= '</div>';
 
@@ -90,7 +88,7 @@ class Module_pkgview extends RepositoryModule {
 
 		// Dependencies
 		$code = '<ul>';
-		foreach($pkg['dependencies'] as $dep) {
+		foreach($package->dependencies as $dep) {
 			$cond = trim(UiCore::dependParse($dep['condition']));
 			// TODO: fix link to search within packages that matches version criteria only.
 			$code .= '<li><a href="/search?name=' . urlencode($dep['name']) . '">' . $dep['name'] . '</a>' . ($cond !== '' ? $cond . $dep['version'] : '') . '</li>';
@@ -103,13 +101,14 @@ class Module_pkgview extends RepositoryModule {
 		// Filelist
 		$code = '<div id="filelist"><ol>';
 		foreach($pkgfiles['files'] as $file) {
-			$code .= '<li><a href="/fileview/' . $pkg['md5'] . '?f=' . urlencode($file) . '">' . $file . '</a></li>';
+			$code .= '<li><a href="/fileview/' . $package->md5 . '?f=' . urlencode($file) . '">' . $file . '</a></li>';
 		}
 		$code .= '</ol></div>';
 
 		$tabs[] = ['title' => 'Files', 'body' => $code];
 
 		// Other versions
+		// TODO: think about span of search
 		$code = '<div id="otherversions"><ol>';
 		foreach($package->repositories as $patharray) {
 			if (isset($patharray['latest'])) unset($patharray['latest']);
@@ -137,7 +136,7 @@ class Module_pkgview extends RepositoryModule {
 		$user = Auth::user();
 		if ($user) {
 			$table = [];
-			foreach($pkg['repositories'] as $path) {
+			foreach($package->repositories as $path) {
 				$args = '\'' . $path['repository'] . '\', \'' . $path['osversion'] . '\', \'' . $path['branch'] . '\', \'' . $path['subgroup'] . '\'';
 				$row = [
 					implode('/', $path), 
@@ -160,13 +159,13 @@ class Module_pkgview extends RepositoryModule {
 		return $ret;
 	}
 
-	private function requestDispatcher($data, $pkg) {
+	private function requestDispatcher($data, $package) {
 		$callback = 'process_' . trim($data['__submit_form_id']);
-		if (method_exists($this, $callback)) return $this->$callback($data, $pkg);
+		if (method_exists($this, $callback)) return $this->$callback($data, $package);
 		return 'Call signature ' . $callback . ' unknown';
 	}
 
-	private function process_pkgMoveFormInit($data, $pkg) {
+	private function process_pkgMoveFormInit($data, $package) {
 		$user = Auth::user();
 		$old_location = [];
 		foreach(['repository', 'osversion', 'branch', 'subgroup'] as $k) {
@@ -184,7 +183,7 @@ class Module_pkgview extends RepositoryModule {
 			'subgroup' =>  ['type' => 'select', 'label' => 'Subgroup', 'options' => $repository->subgroups($data['osversion'], $data['branch'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
 			];
 		
-		$code = '<h1>Move package ' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . '</h1>';
+		$code = '<h1>Move package ' . $package . '</h1>';
 		$code .= 'From: ' . implode('/', [$data['repository'], $data['osversion'], $data['branch'], $data['subgroup']]);
 		foreach ($fields as $key => $desc) {
 			$code .= UiCore::getInput($key, $data[$key], '', $desc);
@@ -202,7 +201,7 @@ class Module_pkgview extends RepositoryModule {
 	}
 
 
-	private function process_getFormFieldOptions($data, $pkg) {
+	private function process_getFormFieldOptions($data, $package) {
 		$user = Auth::user();
 		$permission = $data['permission'];
 		$repository = new Repository($data['repository']);
@@ -216,7 +215,7 @@ class Module_pkgview extends RepositoryModule {
 
 	}
 
-	private function process_pkgMoveFormSave($data, $pkg) {
+	private function process_pkgMoveFormSave($data, $package) {
 		$user = Auth::user();
 		$new_location = [];
 		$f = ['repository', 'osversion', 'branch', 'subgroup'];
@@ -227,7 +226,8 @@ class Module_pkgview extends RepositoryModule {
 
 		$old_location = json_decode($data['old_location']);
 
-		foreach($pkg['repositories'] as &$location) {
+		$paths = $package->repositories;
+		foreach($paths as &$location) {
 			$match = true;
 			foreach($f as $k) {
 				if ($location[$k]!==$old_location->$k) {
@@ -240,21 +240,14 @@ class Module_pkgview extends RepositoryModule {
 
 			}
 		}
+		$package->repositories = $paths;
+		$package->save();
 
-
-		self::db()->packages->findAndModify(
-		['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
-		[
-			'$set' => ['repositories' => $pkg['repositories']], 
-			'$inc' => ['_rev' => 1]
-		]);
-
-
-		header('Location: /pkgview/' . $pkg['md5']);
+		header('Location: /pkgview/' . $package->md5);
 
 	}
 
-	private function process_pkgCopyFormInit($data, $pkg) {
+	private function process_pkgCopyFormInit($data, $package) {
 		$user = Auth::user();
 	
 		if (isset($data['repository'])) {
@@ -273,7 +266,7 @@ class Module_pkgview extends RepositoryModule {
 			'subgroup' =>  ['type' => 'select', 'label' => 'Subgroup', 'options' => $repository->subgroups(@$data['osversion'], @$data['branch'], $user, 'write'), 'events' => ['onchange' => 'pkgFormUpdate(\'write\');']],
 			];
 
-		$code = '<h1>Copy package ' . $pkg['name'] . '-' . $pkg['version'] . '-' . $pkg['arch'] . '-' . $pkg['build'] . ' to:</h1>';
+		$code = '<h1>Copy package ' . $package . ' to:</h1>';
 
 		if (isset($data['repository'])) {
 			$code .= 'From: ' . implode('/', [$data['repository'], $data['osversion'], $data['branch'], $data['subgroup']]);
@@ -292,7 +285,7 @@ class Module_pkgview extends RepositoryModule {
 		return $ret;
 	}
 
-	private function process_pkgCopyFormSave($data, $pkg) {
+	private function process_pkgCopyFormSave($data, $package) {
 		$user = Auth::user();
 		$new_location = [];
 		$f = ['repository', 'osversion', 'branch', 'subgroup'];
@@ -302,7 +295,8 @@ class Module_pkgview extends RepositoryModule {
 		}
 
 		$match = false;
-		foreach($pkg['repositories'] as &$location) {
+		$paths = $package->repositories;
+		foreach($paths as &$location) {
 			$match = true;
 			foreach($f as $k) {
 				if ($location[$k]!==$new_location[$k]) {
@@ -313,21 +307,19 @@ class Module_pkgview extends RepositoryModule {
 		}
 
 		if (!$match) {
-			self::db()->packages->findAndModify(
-			['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
-			[
-				'$addToSet' => ['repositories' => $new_location], 
-				'$inc' => ['_rev' => 1]
-			]);
+			$paths[] = $new_location;
+			$package->repositories = $paths;
+			$package->save();
+
 		}
 
 
-		header('Location: /pkgview/' . $pkg['md5']);
+		header('Location: /pkgview/' . $package->md5);
 
 	}
 
 
-	private function process_pkgDeleteFormSave($data, $pkg) {
+	private function process_pkgDeleteFormSave($data, $package) {
 		$user = Auth::user();
 		$rm_location = [];
 		$f = ['repository', 'osversion', 'branch', 'subgroup'];
@@ -338,7 +330,7 @@ class Module_pkgview extends RepositoryModule {
 
 
 		$newset = [];
-		foreach($pkg['repositories'] as &$location) {
+		foreach($package->repositories as $location) {
 			$match = true;
 			foreach($f as $k) {
 				if ($location[$k]!==$rm_location[$k]) {
@@ -350,15 +342,8 @@ class Module_pkgview extends RepositoryModule {
 				$newset[] = $location;
 			}
 		}
-
-
-		self::db()->packages->findAndModify(
-		['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
-		[
-			'$set' => ['repositories' => $newset], 
-			'$inc' => ['_rev' => 1]
-		]);
-
+		$package->repositories = $newset;
+		$package->save();
 
 		return 'OK';
 
