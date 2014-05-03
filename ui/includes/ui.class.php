@@ -4,6 +4,7 @@ class UI {
 
 	public static function humanizeSize($bytes)	{
 		$bytes = floatval($bytes);
+		$result = 0;
 		$arBytes = array(
 			0 => array(
 				"UNIT" => "TB",

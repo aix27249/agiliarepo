@@ -35,7 +35,7 @@ class Module_footer extends RepositoryModule {
 				]
 			]);
 
-		$r = $totalsize['result'][0]['compressed_size'];
+		$r = ($count>0 ? $totalsize['result'][0]['compressed_size'] : 0);
 		$ret = 'This server contains ' . $count . ' packages, total ' . UI::humanizeSize($r);
 
 		return $ret;
