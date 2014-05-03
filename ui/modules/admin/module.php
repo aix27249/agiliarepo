@@ -10,6 +10,7 @@ class Module_admin extends AdminModule {
 		/*if ($this->blockname==='sidebar') return $this->run_sidebar();*/
 
 		$o = [
+			'settings' => 'Server settings',
 			'users' => 'Users',
 			'groups' => 'Groups',
 			'repositories' => 'Repositories',
