@@ -1,9 +1,8 @@
 <?php
-/* Sample MongoDB connection config. If config is omitted, defaults used instead. */
-
 $mongo_config = [
-	'server' => 'mongodb://localhost:27017',
-	'options' => ['connect' => true],
-	'driver_options' => []
+'server' => 'mongodb://localhost:27017',
+'dbname' => 'agiliarepo',
+'options' => ['connect' => true],
+'driver_options' => ['w' => 0],
 ];
 

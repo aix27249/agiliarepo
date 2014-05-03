@@ -2,9 +2,11 @@
 
 class PageSettings {
 	public static $modules = [
-		'header' => ['logo', 'menu'],
+		'header' => ['logo', 'searchbar', 'login'],
 		'content' => [],
-		'footer' => ['footer']
+		'sidebar' => ['menu'],
+		'footer' => ['footer'],
+		'__logic' => ['auth'],
 		];
 
 }
