@@ -30,7 +30,11 @@ class Module_pkgsearch extends RepositoryModule {
 
 
 		$q = $this->db->packages->find($query)->sort(['add_date' => -1]);
+		$page = intval(@$_GET['page']);
+		$limit = (isset($_GET['limit']) ? intval($_GET['limit']) : 50);
+
+
 		$ret = '<h1>Search results</h1>';
-		return $ret . Module_pkglist::getList($q/*, (@$_GET['limit'] ? intval($_GET['limit']) : 50), @$_GET['offset']*/);
+		return $ret . Module_pkglist::getList($q, $limit, $page, 'Complex');
 	}
 }

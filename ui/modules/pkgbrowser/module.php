@@ -13,8 +13,10 @@ class Module_pkgbrowser extends RepositoryModule {
 		if (isset($path[3])) $query['repositories.subgroup'] = $path[3];
 
 		$newpath = array_merge(['/'], $path);
+		$page = intval(@$_GET['page']);
+		$limit = (isset($_GET['limit']) ? intval($_GET['limit']) : 50);
 
-		return '<div class="path">' . $this->renderPath($newpath) . '</div>' . Module_pkglist::getList($this->db->packages->find($query)/*, (@$_GET['limit'] ? intval($_GET['limit']) : 20), @$_GET['offset']*/);
+		return '<div class="path">' . $this->renderPath($newpath) . '</div>' . Module_pkglist::getList($this->db->packages->find($query), $limit, $page, 'Complex');
 
 	}
 
