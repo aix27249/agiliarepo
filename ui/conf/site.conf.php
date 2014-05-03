@@ -7,6 +7,6 @@ class SiteSettings {
 		$site_url = 'example.net',
 		$scripts = ['jquery.min.js'],
 		$template = 'repository',
-		$root_path = '/home/aix/www/repositories/package_tree';
+		$web_root_path = 'http://packages.agilialinux.ru/package_tree';
 
 }

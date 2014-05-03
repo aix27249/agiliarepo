@@ -65,7 +65,7 @@ class Module_pkgview extends RepositoryModule {
 
 		// Downloads
 		$ret .= '<div class="infoblock download_links"><h3>Download</h3>';
-		$ret .= '<div class="download">Package: <a href="http://packages.agilialinux.ru/package_tree/' . $pkg['location'] . '/' . $pkg['filename'] . '">' . $pkg['filename'] . '</a></div>';
+		$ret .= '<div class="download">Package: <a href="' . SiteSettings::$web_root_path . '/' . $pkg['location'] . '/' . $pkg['filename'] . '">' . $pkg['filename'] . '</a></div>';
 
 
 		// Build tree link

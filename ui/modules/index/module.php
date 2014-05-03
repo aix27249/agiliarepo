@@ -122,9 +122,9 @@ class Module_index extends RepositoryModule {
 		$pos = array_search('__pr__', $this->page->path);
 		if ($pos===false) die('Invalid path');
 		$rpath = array_slice($this->page->path, $pos+1);
-		$fullpath = SiteSettings::$root_path . '/' . implode('/', $rpath);
+		$fullpath = ServerSettings::$root_path . '/' . implode('/', $rpath);
 		$realpath = realpath($fullpath);
-		if (strpos($realpath, SiteSettings::$root_path)!==0) die('Invalid path');
+		if (strpos($realpath, ServerSettings::$root_path)!==0) die('Invalid path');
 		$filename = $rpath[(count($rpath)-1)];
 		if (!file_exists($realpath)) die($fullpath . ' does not exist');
 	

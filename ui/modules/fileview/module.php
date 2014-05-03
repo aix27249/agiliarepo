@@ -40,9 +40,9 @@ class Module_fileview extends RepositoryModule {
 		}
 
 
-		$pkg_filename = SiteSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'];
+		$pkg_filename = ServerSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'];
 		$tmp = tempnam('/tmp', 'agrepo_fileview');
-		TgzHandler::extractFile(SiteSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'], $file, $tmp);
+		TgzHandler::extractFile(ServerSettings::$root_path . '/' . $pkg['location'] . '/' . $pkg['filename'], $file, $tmp);
 
 		// Check if file is binary
 		$finfo = finfo_open(FILEINFO_MIME);
