@@ -91,16 +91,7 @@ class MirrorTask extends AsyncTask {
 			}
 
 		}
-
-
-
-
-
-
-
 		
-		$this->setProgress(0, 100, 'Searching for new packages');
-		$bridge->getNewPackages($this);
 		$this->setStatus('complete', 'Finished');
 	}
 
