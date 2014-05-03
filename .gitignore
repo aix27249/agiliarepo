@@ -4,3 +4,10 @@
 *.swo
 tests/*.private.*
 /users
+
+/ui/conf/site.conf.php
+/ui/conf/defaults.conf.php
+/ui/conf/page.conf.php
+
+/conf/repository.conf.php
+/conf/mongo.conf.php
