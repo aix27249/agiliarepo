@@ -87,7 +87,7 @@ class TaskRunner extends MongoDBAdapter {
 			return false;
 		}
 		echo "Executor found: $executor, running\n";
-		$cmd = 'nohup  php ' . $executor . ' ' . $task->_id . ' >> /tmp/agiliarepo_taskmanager.log 2>&1 & ; echo $?';
+		$cmd = 'nohup  php ' . $executor . ' ' . $task->_id . ' >> /tmp/agiliarepo_taskmanager.log 2>&1 &';
 		echo "Command: $cmd\n";
 		shell_exec($cmd);
 		echo "Task started, pid: [$pid]\n";
@@ -102,7 +102,7 @@ class TaskManager extends MongoDBAdapter {
 	public static function nextTask() {
 		$task = self::db()->tasks->findOne(['status' => 'new']);
 		if (!$task) {
-			echo "No new tasks\n";
+			//echo "No new tasks\n";
 			return NULL;
 		}
 		return new AsyncTask(trim($task['_id']));
@@ -126,13 +126,13 @@ class TaskQueueRunner {
 
 		$counter = 0;
 		while (true) {
-			echo "Loop start ($counter)\n";
+			//echo "Loop start ($counter)\n";
 			$task = TaskManager::nextTask();
 			if ($task) {
 				echo "Found task " . $task->_id;
 				TaskRunner::run($task);
 			}
-			echo "Sleeping $sleep_time\n";
+			//echo "Sleeping $sleep_time\n";
 			sleep($sleep_time);
 		}
 	}
