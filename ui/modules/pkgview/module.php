@@ -34,9 +34,9 @@ class Module_pkgview extends RepositoryModule {
 			'md5' => $package->md5,
 			'package size' => UI::humanizeSize($package->compressed_size),
 			'uncompressed' => Ui::humanizeSize($package->installed_size),
-			'provides' => implode(', ', $package->provides),
-			'conflicts' => implode(', ', $package->conflicts),
-			'config_files' => implode(', ', $package->config_files),
+			'provides' => (is_array($package->provides) ? implode(', ', $package->provides) : ''),
+			'conflicts' => (is_array($package->conflicts) ? implode(', ', $package->conflicts) : ''),
+			'config_files' => (is_array($package->config_files) ? implode(', ', $package->config_files) : ''),
 			];
 
 		$ret .= '<div class="infoblock meta_block">';
