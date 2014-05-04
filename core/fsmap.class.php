@@ -44,6 +44,27 @@ class FsMap {
 		}
 	}
 
+	public static function hardlinkDirectoryContents($from, $to) {
+		if (!file_exists($from)) throw new Exception('Source directory does not exist');
+		if (!file_exists($to)) {
+			mkdir($to);
+			throw new Exception('Destination directory does not exist');
+		}
+
+		$root = self::scandir($from);
+		foreach($root as $fitem) {
+			if (is_dir($from . '/' . $fitem)) {
+				mkdir($to . '/' . $fitem);
+				self::hardlinkDirectoryContents($from . '/' . $fitem, $to . '/' . $fitem);
+			}
+			else link($from . '/' . $fitem, $to . '/' . $fitem);
+		}
+	}
+
+	public static function scandir($path) {
+		return array_values(array_diff(scandir($path), ['..', '.']));
+	}
+
 }
 
 

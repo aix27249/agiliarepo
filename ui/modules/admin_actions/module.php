@@ -8,7 +8,10 @@ class Module_admin_actions extends AdminModule {
 		if (isset($this->page->path[3])) {
 			$method = 'action_' . $this->page->path[3];
 			$sidemethod = 'sidebar_action_' . $this->page->path[3];
-			if ($this->blockname==='sidebar' && method_exists($this, $sidemethod)) return $this->$sidemethod();
+			if ($this->blockname==='sidebar') {
+				if (method_exists($this, $sidemethod)) return $this->$sidemethod();
+				else return '';
+			}
 			if (!method_exists($this, $method)) return 'Method ' . $method . ' not found';
 			return $this->$method();
 		}
@@ -110,4 +113,94 @@ class Module_admin_actions extends AdminModule {
 	public function sidebar_action_find_old_versions() {
 		return '<h1>Old version scan</h1><p>Scans specified area of repository, checks which packages are latest within subcategory, and stores that data</p>';
 	}
+
+
+	public function action_create_iso() {
+		/* Form wizard will be here */
+
+		$slides = [];
+		
+		// Select a repository
+		$slide = '<h2>Repository and architecture</h2><p>At this moment, only one repository can be used to build an ISO. Ability to build ISO image using multiple repositories will be added in future.</p>';
+	       	$slide .= UiCore::getInput('repository', Settings::get('default_repository'), '', ['type' => 'select', 'label' => 'Repository to use', 'options' => Repository::getList()]);
+	       	$slide .= UiCore::getInput('arch', '', '', ['type' => 'select', 'label' => 'Architecture', 'options' => ['x86', 'x86_64', 'any']]);
+		$slides[] = $slide;
+
+		
+		// Select OS versions, branches and subgroups
+		$slide = '<h2>OS versions, branches, subgroups</h2><p>Select which packages should be used.</p>';
+		if (isset($_POST['repository'])) {
+			$slide .= '<p>Repository selected: ' . $_POST['repository'] . ', arch: ' . $_POST['arch'] . '</p>';
+			$repository = new Repository(trim($_POST['repository']));
+			$osversions = UiCore::multiCheckbox($repository->osversions(), [], '_osversion');
+			$branches = UiCore::multiCheckbox($repository->branches(), [], '_branch');
+			$subgroups = UiCore::multiCheckbox($repository->subgroups(), [], '_subgroup');
+			$slide .= '<h3>OS version:</h3><div id="create_iso_osversions">' . $osversions . '</div>';
+			$slide .= '<h3>Branch:</h3><div id="create_iso_branches">' . $branches . '</div>';
+			$slide .= '<h3>Subgroup:</h3><div id="create_iso_subgroups">' . $subgroups . '</div>';
+		}
+		$slides[] = $slide;
+
+		// Select an ISO template
+		$slide = '<h2>ISO template</h2><p>ISO template contains bootable kernel, live filesystem image and other files like this</p>';
+		if (isset($_POST['repository'])) $slide .= '<p>Repository selected: ' . $_POST['repository'] . ', arch: ' . $_POST['arch'] . '</p>';
+		$slide .= UiCore::getInput('iso_template', '', '', ['type' => 'select', 'label' => 'ISO template', 'options' => IsoBuilder::templates()]);
+		$slides[] = $slide;
+
+		// Final settings: ISO name and confirmation
+		$slide = '<h2>Final settings</h2><p id="create_iso_final"></p>';
+		$slide .= UiCore::getInput('iso_name', 'AgiliaLinux_' . date('Y-m-d_His'), '', ['type' => 'text', 'label' => 'ISO filename']);
+		$slides[] = $slide;
+
+
+
+		$ret = '<h1>Create an iso image</h1>';
+
+		$ret .= UiCore::slideForm('create_iso_form', $slides, true);
+		
+
+		if (@$_POST['__submit_form_id']==='create_iso_form') {
+
+			$task_options = [
+				'repository' => trim($_POST['repository']),
+				'arch' => trim($_POST['arch']),
+				'iso_template' => trim($_POST['iso_template']),
+				'iso_name' => trim($_POST['iso_name'])
+				];
+
+			$repository = new Repository($task_options['repository']);
+			$task_options['osversions'] = [];
+			$task_options['branches'] = [];
+			$task_options['subgroups'] = [];
+			foreach($repository->osversions() as $osversion) {
+				// Dots are transformed in underscore in POST keys, so it is required to handle it
+				$js_osversion = preg_replace('/\./', '_', $osversion);
+				if (isset($_POST[$js_osversion . '_osversion'])) $task_options['osversions'][] = $osversion;
+			}
+			foreach($repository->branches() as $branch) {
+				if (isset($_POST[$branch . '_branch'])) $task_options['branches'][] = $branch;
+			}
+			foreach($repository->subgroups() as $subgroup) {
+				if (isset($_POST[$subgroup . '_subgroup'])) $task_options['subgroups'][] = $subgroup;
+			}
+
+
+			$task_desc = 'Create ISO ' . $task_options['iso_name'] . 
+				' using ' . $task_options['iso_template'] . 
+				' template, repository: ' . $task_options['repository'] . 
+				', osversions: ' . implode(', ', $task_options['osversions']) . 
+				', branches: ' . implode(', ', $task_options['branches']) . 
+				', subgroups: ' . implode(', ', $task_options['subgroups']);
+
+
+
+			$task_id = AsyncTask::create(Auth::user()->name, 'create_iso', $task_desc, $task_options);
+			header('Location: /taskmon/view/' . $task_id);
+			return 'Task created';
+
+		}
+
+		return $ret;
+	}
+
 }

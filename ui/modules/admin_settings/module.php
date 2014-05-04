@@ -10,6 +10,7 @@ class Module_admin_settings extends AdminModule {
 		$fields = [
 			'default_repository' => ['type' => 'select', 'label' => 'Default repository', 'options' => Repository::getList()],
 			'language' => ['type' => 'select', 'label' => 'UI language', 'options' => ['auto' => 'Detect automatically', 'en' => 'English', 'ru' => 'Russian']],
+			'iso_templates_path' => ['type' => 'text', 'label' => 'ISO templates directory', 'placeholder' => 'Please, enter absolute path'],
 			];
 
 		$settings = new Settings(false);
