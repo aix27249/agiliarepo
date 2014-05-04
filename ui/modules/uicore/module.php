@@ -71,7 +71,7 @@ class UiCore {
 			$ret .= static::editFields($object);
 		}
 		else {
-			trigger_error('UiCore::editForm required object or code to be specified. You may omit one of them, but not both.', E_USER_ERROR);
+			throw new Exception('UiCore::editForm required object or code to be specified. You may omit one of them, but not both.');
 		}
 
 		if ($submit_code) $ret .= $submit_code;
@@ -236,5 +236,54 @@ class UiCore {
 		if (array_key_exists($from, $map)) return $map[$from];
 		else if (in_array($from, $map)) return array_search($from, $map);
 		return '';
+	}
+
+	public static function multiCheckbox($items, $values, $suffix, $title = '') {
+		$fields = [];
+		$code = '';
+		if (trim($title)!=='') $code .= '<h2>' . $title . '</h2>';
+		if (self::isAssoc($items)) {
+			foreach($items as $key => $value) {
+				$fields[$key] = ['type' => 'checkbox', 'label' => $value];
+			}
+		}
+		else {
+			foreach($items as $key) {
+				$fields[$key] = ['type' => 'checkbox', 'label' => $key];
+			}
+		}
+
+		foreach($fields as $key => $fdesc) {
+			$code .= self::getInput($key, @$values[$key], $suffix, $fdesc);
+		}
+		return $code;
+	}
+
+	public static function slideForm($form_id, $slides, $handle_ajax = true) {
+		$slide_id = 0;
+		//die(print_r($_POST, true));
+		if (isset($_POST['__slide_ajax_request'])) {
+			$slide_id = $_POST['__slide_ajax_request'];
+		}
+
+		if (isset($_POST['__slide_ajax_update_slide'])) {
+			die($slides[$slide_id]);
+		}
+
+		$ret = '<form class="uicore_form_slides" id="' . $form_id . '" method="POST">';
+		for($i=0; $i<count($slides); $i++) {
+			$ret .= '<div class="uicore_form_slide' . ($i===$slide_id ? ' active' : '') . ' uicore_form_slide_' . $i . '" data-slide-id="' . $i . '">
+				<div class="uicore_form_slide_body uicore_form">' . $slides[$i] . '</div>
+				<div class="uicore_form_slide_controls">' . 
+					($i>0 ? '<input type="button" value="Prev" class="uicore_form_slides_button_prev" onclick="uiCoreFormSlideGo(' . ($i-1) . ',\'' . $form_id . '\');" />' : '') . 
+					($i<(count($slides)-1) ? '<input value="Next" class="uicore_form_slides_button_next" type="button" onclick="uiCoreFormSlideGo(' . ($i+1) . ',\'' . $form_id . '\');" />' : '') . 
+					($i==(count($slides)-1) ? '<input value="Save" class="uicore_form_slides_button_save" type="submit" />' : '') . 
+				'</div>
+				</div>';
+		}
+		$ret .= '<input type="hidden" name="__submit_form_id" value="' . $form_id . '" />';
+		$ret .= '</form>';
+
+		return $ret;
 	}
 }

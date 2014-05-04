@@ -60,4 +60,16 @@ function createPopup(code) {
 	$('body').append('<div class="popup" id="popup">' + code + '</div><div class="popup_shadow" id="popup_shadow" onclick="removePopup();"></div>');
 }
 
+function uiCoreFormSlideGo(slide_id, form_id) {
+	var form = $("#" + form_id).serialize();
+	form += '&__slide_ajax_request=' + slide_id;
+	form += '&__slide_ajax_update_slide=1';
+	console.log(form);
+	$.post(window.location.href, form, function(data) {
+		$("#" + form_id + " .uicore_form_slide").removeClass('active');
 
+		$("#" + form_id + " .uicore_form_slide_" + slide_id + ' .uicore_form_slide_body').html(data);
+		$("#" + form_id + " .uicore_form_slide_" + slide_id).addClass('active');
+	});
+
+}

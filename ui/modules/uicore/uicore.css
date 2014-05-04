@@ -160,3 +160,11 @@
 .tab_content_item.active {
 	display: block;
 }
+
+.uicore_form_slide {
+	display: none;
+}
+
+.uicore_form_slide.active {
+	display: block;
+}
