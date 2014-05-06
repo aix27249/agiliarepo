@@ -31,7 +31,7 @@ class UiCore {
 
 			break;
 		case 'textarea':
-			$ret .= '<textarea ' . $idclass_str  . $eventstr . ' placeholder="' . $field_desc['placeholder'] . '">' . htmlspecialchars($value) . '</textarea>';
+			$ret .= '<textarea ' . $idclass_str  . $eventstr . (isset($field_desc['placeholder']) ? ' placeholder="' . $field_desc['placeholder'] . '"' : '') . '>' . htmlspecialchars($value) . '</textarea>';
 			break;
 		case 'select':
 			$ret .= '<select ' . $idclass_str . $eventstr . '>';
@@ -53,7 +53,7 @@ class UiCore {
 			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str  . $eventstr . ' value="' . htmlspecialchars($value) . '" />';
 			break;
 		default:
-			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str  . $eventstr . (isset($field_desc['placeholder']) ? ' placeholder="' . $field_desc['placeholder'] : '') . '" value="' . htmlspecialchars($value) . '" />';
+			$ret .= '<input type="' . $field_desc['type'] . '" ' . $idclass_str  . $eventstr . (isset($field_desc['placeholder']) ? ' placeholder="' . $field_desc['placeholder'] . '"' : '') . ' value="' . htmlspecialchars($value) . '" />';
 			break;
 		}
 
