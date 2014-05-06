@@ -246,6 +246,10 @@ class User {
 
 	}
 
+	public function homedir() {
+		return realpath(dirname(__FILE__) . '/../../../users/' . $this->name);
+	}
+
 }
 
 class Group {
