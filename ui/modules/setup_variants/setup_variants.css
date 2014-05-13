@@ -13,3 +13,20 @@ textarea#packages {
 #create_form label {
 	vertical-align: top;
 }
+
+.setup_variant_info {
+	margin-bottom: 30px;
+}
+.setup_variant_info .desc, .setup_variant_info .full {
+	margin-bottom: 20px;
+}
+
+.packages.table {
+	width: 100%;
+}
+
+.packages.table .table-head {
+	font-weight: bold;
+	font-size: 1.2em;
+	padding: 5px 0px;
+}

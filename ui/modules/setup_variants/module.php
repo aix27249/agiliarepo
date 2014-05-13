@@ -3,6 +3,7 @@ Page::loadModule('repository');
 Page::loadModule('uicore');
 class Module_setup_variants extends RepositoryModule {
 	public static $styles = ['setup_variants.css'];
+	public static $scripts = ['setup_variants.js'];
 	public function run() {
 		if ($this->blockname==='sidebar') return $this->run_sidebar();
 		// Path layout: /setup_variants/[action]/[repository]/[osver]/[variant_name]
@@ -18,16 +19,24 @@ class Module_setup_variants extends RepositoryModule {
 		$links = ['create' => 'Create new'];
 		$ret = '<h2>Setup variants</h2>';
 
+		
 		foreach($links as $action => $title) {
 			$ret .= '<li><a href="/setup_variants/' . $action . '">' . $title . '</a></li>';
+		}
+
+		if (isset($this->page->path[2])) {
+			$ret .= '<h2>Available</h2>';
+			$ret .= $this->action_list(true);
 		}
 		return $ret;
 	}
 
 	// TODO: stub
-	public function action_list() {
+	public function action_list($noheader = false) {
 		$variants = self::db()->setup_variants->find();
-		$ret = '<h1>Setup variants</h1>';
+
+		$ret = '';
+		if (!$noheader) $ret .= '<h1>Setup variants</h1>';
 		$ret .= '<ul>';
 
 		foreach($variants as $v) {
@@ -128,7 +137,128 @@ class Module_setup_variants extends RepositoryModule {
 		$variant_name = $this->page->path[5];
 
 		$setup_variant = self::db()->setup_variants->findOne(['repository' => $repository_name, 'osversion' => $osversion, 'name' => $variant_name]);
-		$ret = '<pre>' . print_r($setup_variant, true) . '</pre>';
+		$ret = '<h1>' . $setup_variant['name'] . '</h1>';
+		$ret .= '<h2>' . $setup_variant['desc'] . '</h2>';
+		$ret .= '<div class="setup_variant_info">';
+		$ret .= '<div class="full">' . $setup_variant['full'] . '</div>';
+		$ret .= '<div class="specs">
+			Repository: ' . $repository_name . '<br />
+			OS version: ' . $osversion . '<br />
+
+			X11: ' . ($setup_variant['hasX11'] ? 'yes' : 'no') . '<br />
+			GUI login: ' . ($setup_variant['hasDM'] ? 'yes': 'no') . '<br />
+			</div>';
+
+		$ret .= '</div>';
+		$ret .= '<h2>Packages: ' . count($setup_variant['packages']) . '</h2><a id="verbose_link" href="javascript:setup_variants.switchMode(\'verbose\');">Show verbose list</a><br /><br />';
+		$package_names = $setup_variant['packages'];
+
+		sort($package_names);
+		if (@$_POST['__ajax']==='verbose') {
+			$packages = self::db()->packages->find(['name' => ['$in' => $package_names], 'repositories.latest' => true, 'repositories.repository' => $repository_name, 'repositories.osversion' => $osversion, 'repositories.branch' => 'core']);
+			die($this->ajax_verbose_pkglist($package_names, $packages, $repository_name, $osversion));
+		}
+		else {
+			$ret .= '<div id="package_container">' . nl2br(implode("\n", $package_names)) . '</div>';
+		}
+		return $ret;
+
+	}
+
+	public function ajax_verbose_pkglist($package_names, $packages, $repository_name, $osversion) {
+		$ret = '';
+		$packages = iterator_to_array($packages, true);
+
+
+		$ret .= '<div class="packages table">';
+		$head = ['name', 'x86', 'x86_64'];
+		$ret .= '<div class="table-row table-head">';
+		foreach($head as $h) $ret .= '<div class="table-cell table-head">' . $h . '</div>';
+		$ret .= '</div>';
+		$x86 = Package::queryArchSet('i686');
+		$x86 = $x86['$in'];
+		$x86_64 = Package::queryArchSet('x86_64');
+		$x86_64 = $x86_64['$in'];
+
+		foreach($package_names as $name) {
+			$ret .= '<div class="table-row">';
+			$ret .= '<div class="table-cell">
+				<a href="/search?name=' . urlencode($name) . '&amp;repository=' . $repository_name . '&amp;osversion=' . $osversion . '&amp;latest=1">' . $name . '</a>
+				</div>';
+			$ret .= '<div class="table-cell">';
+			$x86_packages = [];
+			foreach($packages as $pkg) {
+				if ($pkg['name']===$name && in_array($pkg['arch'], $x86, true)) {
+					foreach($pkg['repositories'] as $r) {
+						if (@$r['latest'] && $r['repository']===$repository_name && $r['osversion']===$osversion) {
+							$x86_packages[] = $pkg;
+							break;
+						}
+					}
+				}
+			}
+			$counter = 0;
+			if (count($x86_packages)===0) {
+				$ret .= 'Not found';
+			}	
+			foreach($x86_packages as $pkg) {
+				$ret .= '<a href="/pkgview/' . $pkg['md5'] . '">' . $pkg['version'] . '-' . $pkg['build'];
+				if (count($x86_packages)>1) {
+					foreach($pkg['repositories'] as $r) {
+						if (@$r['latest'] && $r['repository']===$repository_name && $r['osversion']===$osversion) {
+							$ret .= ' (' . $r['branch'] . '/'. $r['subgroup'] . ')';
+							break;
+						}
+					}
+				}
+				$ret .= '</a>';
+				if ($counter<count($x86_packages)) $ret .= '<br />';
+				$counter++;
+			}
+
+			$ret .= '</div>';
+
+
+			$ret .= '<div class="table-cell">';
+			$x86_64_packages = [];
+			foreach($packages as $pkg) {
+				if ($pkg['name']===$name && in_array($pkg['arch'], $x86_64, true)) {
+					foreach($pkg['repositories'] as $r) {
+						if (@$r['latest'] && $r['repository']===$repository_name && $r['osversion']===$osversion) {
+							$x86_64_packages[] = $pkg;
+							break;
+						}
+					}
+				}
+			}
+			$counter = 0;
+			if (count($x86_64_packages)===0) {
+				$ret .= 'Not found';
+			}	
+
+			foreach($x86_64_packages as $pkg) {
+				$ret .= '<a href="/pkgview/' . $pkg['md5'] . '">' . $pkg['version'] . '-' . $pkg['build'];
+				if (count($x86_64_packages)>1) {
+					foreach($pkg['repositories'] as $r) {
+						if (@$r['latest'] && $r['repository']===$repository_name && $r['osversion']===$osversion) {
+							$ret .= ' (' . $r['branch'] . '/'. $r['subgroup'] . ')';
+							break;
+						}
+					}
+				}
+				$ret .= '</a>';
+				if ($counter<count($x86_64_packages)) $ret .= '<br />';
+				$counter++;
+			}
+
+			$ret .= '</div>';
+
+
+
+
+			$ret .= '</div>';
+		}
+		$ret .= '</div>';
 		return $ret;
 
 	}
