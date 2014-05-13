@@ -24,8 +24,13 @@ class Module_pkgsearch extends RepositoryModule {
 		if (trim(@$_GET['by'])) {
 			$query['maintainer.name'] = trim($_GET['by']);
 		}
-		if (isset($_GET['latest_only'])) {
+		if (isset($_GET['latest'])) {
 			$query['repositories.latest'] = true;
+		}
+		foreach(['repository', 'osversion', 'branch', 'subgroup'] as $b) {
+			if (isset($_GET[$b])) {
+				$query['repositories.' . $b] = trim($_GET[$b]);
+			}
 		}
 
 

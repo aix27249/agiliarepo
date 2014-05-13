@@ -13,7 +13,7 @@ class Module_searchbar extends Module {
 			'version' => ['type' => 'text', 'label' => 'Version'],
 			'arch' => ['type' => 'select', 'label' => 'Architecture', 'options' => ['any', 'x86', 'x86_64']],
 			'build' => ['type' => 'text', 'label' => 'Build'],
-			'latest_only' => ['type' => 'checkbox', 'label' => 'Latest only']
+			'latest' => ['type' => 'checkbox', 'label' => 'Latest only']
 			];
 
 		$code = '';
