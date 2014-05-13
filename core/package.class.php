@@ -127,7 +127,11 @@ class Package extends MongoDBObject {
 
 		$latest = NULL;
 		foreach($packages as $package) {
-			if ($latest===NULL || self::compareVersions($package, $latest)>0) $latest = $package;
+			if ($latest===NULL) {
+				$latest = $package;
+				continue;
+			}
+			if (self::compareVersions($package, $latest)>0) $latest = $package;
 		}
 
 		foreach($packages as &$package) {
@@ -155,25 +159,45 @@ class Package extends MongoDBObject {
 	}
 
 	public function setLatest($path, $is_latest = true) {
-		list($repository, $osversion, $branch, $subgroup) = explode('/', $path);
+		if (!is_array($path)) list($repository, $osversion, $branch, $subgroup) = explode('/', $path);
+		else {
+			$repository = $path['repository'];
+			$osversion = $path['osversion'];
+			$branch = $path['branch'];
+			$subgroup = $path['subgroup'];
+		}
+
 		$this->storeState(false);
 		//echo $this . ' at ' . $path . ': is_latest = ' . ($is_latest ? 'true' : 'false') . "\n";
 		foreach($this->data['repositories'] as &$p) {
 			if ($p['repository']===$repository && $p['osversion']===$osversion && $p['branch'] === $branch && $p['subgroup']===$subgroup) {
+				echo "Setting latest to " . $this . ': '. ($is_latest ? 'true' : 'false') . "\n";
 				$p['latest'] = $is_latest;
 			}
 		}
 	}
 
-	public function altVersions($path) {
-		list($repository, $osversion, $branch, $subgroup) = explode('/', $path);
+	public function altVersions($path = NULL, $arch_hint = NULL) {
+		if ($path!==NULL) {
+			if (!is_array($path)) list($repository, $osversion, $branch, $subgroup) = explode('/', $path);
+			else {
+				//if (!isset($path['repository'])) throw new Exception ('Instead of path, we got a trash here: ' . print_r($path, true));
+				$repository = $path['repository'];
+				$osversion = $path['osversion'];
+				$branch = $path['branch'];
+				$subgroup = $path['subgroup'];
+			}
+		}
 
-		$query = ['name' => $this->name, 
-			'repositories.repository' => $repository, 
-			'repositories.osversion' => $osversion, 
-			'repositories.branch' => $branch, 
-			'repositories.subgroup' => $subgroup];
-		$archsubset = self::queryArchSet($this->arch);
+		$query = ['name' => $this->name];
+		if ($path!==NULL) {
+			$query['repositories.repository'] = $repository;
+			$query['repositories.osversion'] = $osversion;
+			$query['repositories.branch'] = $branch;
+			$query['repositories.subgroup'] = $subgroup;
+		}
+		if ($arch_hint!==NULL) $archsubset = $arch_hint;
+		else $archsubset = self::queryArchSet($this->arch);
 		if ($archsubset!==NULL) $query['arch'] = $archsubset;
 		
 		//if (preg_match('/^..*86$/', $this->arch)>0) $query['arch'] = ['$in' => ['x86', 'i386', 'i486', 'i586', 'i686', 'noarch', 'fw']];
