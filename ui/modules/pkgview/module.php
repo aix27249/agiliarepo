@@ -110,20 +110,21 @@ class Module_pkgview extends RepositoryModule {
 		// Other versions
 		// TODO: think about span of search
 		$code = '<div id="otherversions"><ol>';
-		foreach($package->repositories as $patharray) {
-			if (isset($patharray['latest'])) unset($patharray['latest']);
-			$path = implode('/', $patharray);
+		//foreach($package->repositories as $patharray) {
+		//	if (isset($patharray['latest'])) unset($patharray['latest']);
+		//	$path = implode('/', $patharray);
 			$section = '';
 			$section_count = 0;
-			foreach($package->altVersions($path) as $altpackage) {
+			foreach($package->altVersions() as $altpackage) {
 				if ($altpackage->md5==$package->md5) continue;
 				$section_count++;
-				$section .= '<li><a href="/pkgview/fileview/' . $altpackage->md5 . '">' . $altpackage . '</a></li>';
+				$section .= '<li><a href="/pkgview/' . $altpackage->md5 . '">' . $altpackage . '</a></li>';
 			}
-			if ($section_count>0) {
-				$code .= '<h3>' . $path . '</h3>' . $section;
-			}
-		}
+			$code .= $section;
+		//	if ($section_count>0) {
+		//		$code .= '<h3>' . $path . '</h3>' . $section;
+		//	}
+		//}
 		$code .= '</ol></div>';
 
 		$tabs[] = ['title' => 'Other versions', 'body' => $code];
