@@ -24,6 +24,7 @@ class Module_login extends Module {
 			if ($user->can('add_packages')) $menu .= '<a href="/incoming">Incoming</a>';
 			if ($user->can('admin_panel')) $menu .= '<a href="/admin">Administration</a>';
 			if ($user->can('taskmon')) $menu .= '<a href="/taskmon">Task monitor</a>';
+			if ($user->can('iso')) $menu .= '<a href="/iso">Your ISO images</a>';
 		       	$menu .= '<a href="/logout">Logout</a>';
 		}
 		else {
