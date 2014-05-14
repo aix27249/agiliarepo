@@ -241,3 +241,68 @@ class Package extends MongoDBObject {
 		return self::db()->package_files->findOne(['md5' => $this->md5]);
 	}
 }
+
+class PackageTree {
+	private $packages = [];
+	public function __construct($packages = NULL) {
+		if ($packages) $this->add($packages);
+	}
+	public function add($packages) {
+		if (is_array($packages)) $this->packages = array_merge($this->packages, $packages);
+		else $this->packages = array_merge($this->packages, iterator_to_array($packages));
+	}
+	public function reduced($md5_only = false) {
+		$names = $this->package_names();
+		$reduced = [];
+		foreach($names as $name) {
+			$variants = $this->variants($name);
+			if ($md5_only) {
+				$latest = self::latest_of($variants);
+				$reduced[] = $latest['md5'];
+			}
+			else {
+				$reduced[] = self::latest_of($variants);
+			}
+
+		}
+		return $reduced;
+	}
+
+	public function package_names() {
+		$names = [];
+		foreach($this->packages as $package) {
+			$names[] = $package['name'];
+		}
+		array_unique($names);
+		return $names;
+	}
+	public function variants($package_name) {
+		$packages = [];
+		foreach($this->packages as $package) {
+			if ($package['name']===$package_name) $packages[] = $package;
+		}
+		return $packages;
+	}
+
+	public static function latest_of($variants) {
+		$latest = NULL;
+		foreach($variants as $package) {
+			if ($latest===NULL) {
+				$latest = $package;
+				continue;
+			}
+			if (self::compare_versions($package, $latest)>0) $latest = $package;
+		}
+
+		return $latest;
+
+	}
+	public static function compare_versions($package1, $package2) {
+		$vcmp = VersionCompare::strverscmp($package1['version'], $package2['version']);
+		if ($vcmp===0) {
+			$vcmp = VersionCompare::strverscmp($package1['build'], $package2['build']);
+		}
+		return $vcmp;
+	}
+
+}

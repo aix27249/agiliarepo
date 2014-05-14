@@ -18,6 +18,12 @@ class CreateIsoTask extends AsyncTask {
 			$query['arch'] = $archset;
 		}
 
+		// Reduce
+		$packages = self::db()->packages->find($query);
+		$tree = new PackageTree($packages);
+		$query = ['md5' => ['$in' => $tree->reduced(true)]];
+		unset($tree);
+
 		// Call IsoBuilder to build this stuff
 		IsoBuilder::makeISO($this->options['iso_name'], $this->options['iso_template'], $query, $this->owner, $this);
 
