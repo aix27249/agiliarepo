@@ -15,7 +15,7 @@ class IsoBuilder {
 	}
 
 
-	public static function makeISO($iso_name, $iso_template, $packages_query, $owner_name, $task = NULL) {
+	public static function makeISO($iso_name, $iso_template, $packages_query, $setup_variants, $owner_name, $task = NULL) {
 
 		if ($task) $task->setProgress(0, 100, 'Creating directory structure');
 		// Detect and create directory structure
@@ -52,6 +52,28 @@ class IsoBuilder {
 
 		// TODO: setup variants
 		// As for now, it is included in ISO template, but this is WRONG. User should be able to select setup variants he wants to be included.
+		@unlink($package_root . '/setup_variants.list');
+		@unlink($package_root . '/setup_variants.tar.xz');
+		if (file_exists($package_root . '/setup_variants')) {
+			$dir = scandir($package_root . '/setup_variants');
+			foreach($dir as $f) {
+				$ext = pathinfo($package_root . '/setup_variants/' . $f, PATHINFO_EXTENSION);
+				if ($ext==='list' || $ext==='desc') unlink($package_root . '/setup_variants/' . $f);
+			}
+		}
+		else mkdir($package_root . '/setup_variants');
+		$variants = '';
+		foreach($setup_variants as $sv) {
+			$desc = "desc: " . $sv['desc'] . "\nfull: " . $sv['full'] . "\nhardware: " . $sv['hardware'] . "\n";
+			if ($sv['hasDM']) $desc .= "hasDM\n";
+			if ($sv['hasX11']) $desc .= "hasX11\n";
+			file_put_contents($package_root . '/setup_variants/' . $sv['name'] . '.desc', $desc);
+			file_put_contents($package_root . '/setup_variants/' . $sv['name'] . '.list', implode("\n", $sv['packages']));
+			$variants[] = $sv['name'] . "\n";
+		}
+		file_put_contents($package_root . '/setup_variants.list', $variants);
+
+		system("( cd " . $package_root . " && tar cjvf setup_variants.tar.xz setup_variants)");
 
 		// Create an index for packages
 

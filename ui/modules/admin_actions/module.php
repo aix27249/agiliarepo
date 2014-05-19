@@ -141,6 +141,27 @@ class Module_admin_actions extends AdminModule {
 		}
 		$slides[] = $slide;
 
+		// Select setup variants
+		$slide = '<h2>Setup variants</h2><p>Select setup variants which will be available. Note that image will include only packages which are relevant to specified variant.</p>';
+		if (isset($_POST['repository'])) {
+			$osversions = [];
+			$repository = new Repository(trim($_POST['repository']));
+
+			$slide .= '<p>Repository selected: ' . $_POST['repository'] . ', arch: ' . $_POST['arch'] . '</p>';
+			$setup_variants = '';
+			foreach($repository->osversions() as $osversion) {
+				$js_osversion = preg_replace('/\./', '_', $osversion);
+				if (!isset($_POST[$js_osversion . '_osversion'])) continue;
+				$variant_names = $repository->setup_variants($osversion);
+				if (count($variant_names)===0) continue;
+				$setup_variants .= '<h4>' . $repository->name . '/' . $osversion . ':</h4>';
+				$setup_variants .= UiCore::multiCheckbox($variant_names, [], '_setup_variant');
+			}
+			$slide .= '<h3>Setup variants:</h3><div id="create_iso_setup_variants">' . $setup_variants . '</div>';
+		}
+		$slides[] = $slide;
+
+
 		// Select an ISO template
 		$slide = '<h2>ISO template</h2><p>ISO template contains bootable kernel, live filesystem image and other files like this</p>';
 		if (isset($_POST['repository'])) $slide .= '<p>Repository selected: ' . $_POST['repository'] . ', arch: ' . $_POST['arch'] . '</p>';
@@ -172,10 +193,15 @@ class Module_admin_actions extends AdminModule {
 			$task_options['osversions'] = [];
 			$task_options['branches'] = [];
 			$task_options['subgroups'] = [];
+			$task_options['setup_variants'] = [];
 			foreach($repository->osversions() as $osversion) {
 				// Dots are transformed in underscore in POST keys, so it is required to handle it
 				$js_osversion = preg_replace('/\./', '_', $osversion);
 				if (isset($_POST[$js_osversion . '_osversion'])) $task_options['osversions'][] = $osversion;
+				$variant_names = $repository->setup_variants($osversion);
+				foreach($variant_names as $variant_name) {
+					if (isset($_POST[$variant_name . '_setup_variant'])) $task_options['setup_variants'][] = $variant_name;
+				}
 			}
 			foreach($repository->branches() as $branch) {
 				if (isset($_POST[$branch . '_branch'])) $task_options['branches'][] = $branch;
@@ -190,7 +216,8 @@ class Module_admin_actions extends AdminModule {
 				' template, repository: ' . $task_options['repository'] . 
 				', osversions: ' . implode(', ', $task_options['osversions']) . 
 				', branches: ' . implode(', ', $task_options['branches']) . 
-				', subgroups: ' . implode(', ', $task_options['subgroups']);
+				', subgroups: ' . implode(', ', $task_options['subgroups']) . 
+				', setup variants: ' . implode(', ', $task_options['setup_variants']);
 
 
 

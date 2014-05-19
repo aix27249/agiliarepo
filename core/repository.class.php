@@ -221,5 +221,14 @@ class Repository extends MongoDBAdapter {
 		return $prefix . $this->name;
 	}
 
+	public function setup_variants($osversions = NULL) {
+		$query = ['repository' => $this->name];
+		if (is_array($osversions)) $query['osversion'] = ['$in' => $osversions];
+		else if ($osversions!==NULL) $query['osversion'] = $osversions;
+
+		$names = self::db()->setup_variants->distinct('name', $query);
+		return $names;
+	}
+
 }
 

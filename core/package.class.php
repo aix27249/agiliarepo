@@ -268,6 +268,49 @@ class PackageTree {
 		return $reduced;
 	}
 
+	// TODO: $md5_only is ignored
+	public function dep_reduced($package_names, $md5_only = true) {
+		echo "Performing initial reduce\n";
+		$reduced = $this->reduced(false);
+		echo "Running deptree\n";
+		$ret = [];
+		foreach($package_names as $name) {
+			foreach($reduced as $package) {
+				if ($package['name']===$name) {
+					self::package_requires($package, $reduced, $ret);
+				}
+			}
+
+		}
+		return array_values(array_unique($ret));
+		return $ret;
+	}
+	private static function package_requires(&$package, &$packages, &$ret) {
+		echo "\npackage_requires call for " . $package['name'] . "\n";
+		//if (in_array($package['md5'], $ret, true)) return;
+		$ret[] = $package['md5'];
+		foreach($package['dependencies'] as $dep) {
+			$dep_package = self::find_package($dep['name'], $packages);
+			if ($dep_package===NULL) throw new Exception('No package "' . $dep['name'] . '" to satisfy dependency');
+			if (in_array($dep_package['md5'], $ret, true)) {
+				echo "Package " . $dep_package['name'] . " is already selected\n";
+				continue;
+			}
+			echo "\tGot " . $dep_package['name'] . "\n";
+			$ret[] = $dep_package['md5'];
+			self::package_requires($dep_package, $packages, $ret);
+		}
+	}
+	public static function find_package($name, &$packages) {
+		foreach($packages as $package) {
+			if ($package['name']===$name) return $package;
+		}
+		foreach($packages as $package) {
+			if (in_array($name, $package['provides'], true)) return $package;
+		}
+		return NULL;
+	}
+
 	public function package_names() {
 		$names = [];
 		foreach($this->packages as $package) {

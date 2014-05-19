@@ -1,21 +1,32 @@
 <?php
 
 require_once 'mongo.class.php';
+class ESimpleXMLElement extends SimpleXMLElement {
+	public function addCData($cdata_text) {
+		$node = dom_import_simplexml($this); 
+		$no   = $node->ownerDocument; 
+		$node->appendChild($no->createCDATASection($cdata_text)); 
+	}
+}
 class PackageIndex extends MongoDBAdapter {
 	public static function xml($query, $output_directory = false, $location_prefix = '__pr__', $override_location = false) {
 		$packages = self::db()->packages->find($query);
-		$xml = new SimpleXMLElement('<?xml version="1.0" encoding="utf-8"?><repository />');
+		$xml = new ESimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><repository />');
 
 		$counter = 0;
 		foreach($packages as $pkg) {
 			$counter++;
 			$xmlpkg = $xml->addChild('package');
-			foreach(['name', 'version', 'arch', 'build', 'md5', 'filename', 'short_description', 'description', 'compressed_size', 'installed_size', 'location'] as $key) {
+			foreach(['name', 'version', 'arch', 'build', 'compressed_size', 'installed_size', 'short_description', 'description', 'md5', 'filename', 'location'] as $key) {
 				if (!isset($pkg[$key])) continue;
 				// TODO: handle location correctly: mpkg assumes that location is relative to repository index, even if an absolute path with http:// is specified. The only way to do that is map somehow 
 				if ($key==='location') {
 					if ($override_location===false) $xmlpkg->$key = $location_prefix . '/' . $pkg[$key];
-					else $xmlpkg->$key = $override_location;
+					else $xmlpkg->$key = '/' . $override_location;
+				}
+				else if ($key==='description' || $key==='short_description') {
+					$xmlpkg->$key = NULL;
+					$xmlpkg->$key->addCData($pkg[$key]);
 				}
 				else $xmlpkg->$key = $pkg[$key];
 			}
