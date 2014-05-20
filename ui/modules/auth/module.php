@@ -16,8 +16,9 @@ class Auth extends RepositoryModule {
 		if (!$hasher->CheckPassword($password, $user['pass'])) return false;
 
 		// Create user session
+		$user_id = trim($user['_id']);
+		
 		if ($create_session) {
-			$user_id = trim($user['_id']);
 			$session_hash = hash('sha512', $hasher->get_random_bytes(32));
 			$ip = $_SERVER['REMOTE_ADDR'];
 
@@ -31,8 +32,9 @@ class Auth extends RepositoryModule {
 			setcookie('uid', $user_id, time()+86400, '/');
 			setcookie('hash', $session_hash, time()+86400, '/');
 			
-			self::$user = new User($user_id);
 		}
+		
+		self::$user = new User($user_id);
 		return true;
 	}
 

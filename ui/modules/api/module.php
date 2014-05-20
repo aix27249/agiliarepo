@@ -95,5 +95,27 @@ class Module_api extends RepositoryModule {
 		return '/pkgindex/__pr__/' . $package->location . '/' . $package->filename;
 	}
 
+	public function upload_call($args) {
+		// First of all: do auth
+		if (!isset($_POST['login'])) die('Login unspecified');
+		if (!isset($_POST['pass'])) die('Password unspecified');
+		$login = $_POST['login'];
+		$pass = $_POST['pass'];
+
+		$login_result = Auth::tryAuth($login, $pass, false, false);
+		if (!$login_result) die('Invalid login/pass');
+
+
+		var_dump($_FILES);
+		$tmp_name = $_FILES['file']['tmp_name'];
+		$orig_name = $_FILES['file']['name'];
+
+		$upload_dir = Auth::user()->homedir() . '/incoming';
+		if (!file_exists($upload_dir) mkdir($upload_dir);
+		$upload_dir = realpath($upload_dir);
+		move_uploaded_file($tmp_name, $upload_dir . '/' . $orig_name);
+		return 'OK';
+	}
+
 
 }
