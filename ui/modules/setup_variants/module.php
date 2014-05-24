@@ -31,7 +31,6 @@ class Module_setup_variants extends RepositoryModule {
 		return $ret;
 	}
 
-	// TODO: stub
 	public function action_list($noheader = false) {
 		$variants = self::db()->setup_variants->find();
 
@@ -48,10 +47,11 @@ class Module_setup_variants extends RepositoryModule {
 		return $ret;
 	}
 
-	// TODO: stub
 	public function action_create() {
 		$user = Auth::user();
 		if (!$user) return 'Only registered users can edit anything';
+		if (!$user->can('edit_setup_variants')) return 'You have no permission to create setup variants';
+		// TODO: check if user can manage setup variants in SPECIFIC repository
 
 		$ret = '<h1>Create new setup variant</h1>';
 		if (!isset($this->page->path[3])) {
@@ -130,7 +130,6 @@ class Module_setup_variants extends RepositoryModule {
 		return $ret;
 	}
 
-	// TODO: stub
 	public function action_view() {
 		$repository_name = $this->page->path[3];
 		$osversion = $this->page->path[4];
@@ -150,6 +149,7 @@ class Module_setup_variants extends RepositoryModule {
 			</div>';
 
 		$ret .= '</div>';
+		if (Auth::user() && Auth::user()->can('edit_setup_variants')) $ret .= '<div><a href="/setup_variants/edit/' . $repository_name . '/' . $osversion . '/' . $variant_name . '">Edit</a></div>';
 		$ret .= '<h2>Packages: ' . count($setup_variant['packages']) . '</h2><a id="verbose_link" href="javascript:setup_variants.switchMode(\'verbose\');">Show verbose list</a><br /><br />';
 		$package_names = $setup_variant['packages'];
 
@@ -265,5 +265,66 @@ class Module_setup_variants extends RepositoryModule {
 
 	// TODO: stub
 	public function action_edit() {
+		$user = Auth::user();
+		if (!$user) return 'Only registered users can edit anything';
+		if (!$user->can('edit_setup_variants')) return 'You have no permission to edit setup variants';
+
+		$repository_name = $this->page->path[3];
+		$osversion = $this->page->path[4];
+		$variant_name = $this->page->path[5];
+
+		$variant = self::db()->setup_variants->findOne(['name' => $variant_name, 'repository' => $repository_name, 'osversion' => $osversion]);
+
+		if (!$variant) return 'No such setup variant';
+	
+		if (@$_POST['__submit_form_id']==='create') {
+			try {
+				$keys = ['name', 'hardware', 'desc', 'full'];
+				$setup_variant = ['repository' => $repository_name, 'osversion' => $osversion, 'packages' => []];
+				foreach($keys as $k) {
+					if (trim(@$_POST[$k])==='') throw new Exception($k . ' is empty');
+					$setup_variant[$k] = trim($_POST[$k]);
+				}
+				$packages_raw = explode("\r\n", $_POST['packages']);
+				
+				foreach($packages_raw as $p) {
+					$t = trim(preg_replace('/\#.*/', '', $p));
+					if ($t==='') continue;
+					$setup_variant['packages'][] = $t;
+				}
+				$setup_variant['hasDM'] = isset($_POST['hasDM']);
+				$setup_variant['hasX11'] = isset($_POST['hasX11']);
+
+				self::db()->setup_variants->update(['name' => $variant_name, 'repository' => $repository_name, 'osversion' => $osversion], $setup_variant);
+				header('Location: /setup_variants/view/' . $repository_name . '/' . $osversion . '/' . $setup_variant['name']);
+				die();
+			}
+			catch (Exception $e) {
+				$ret .= '<div class="error">' . $e->getMessage() . '</div>';
+			}
+		}
+
+
+		$ret = '<h1>' . $repository_name. '/' . $osversion . '/' . $variant_name . '</h1>';
+		$fields = [
+			'name' => ['type' => 'text', 'label' => 'Name'],
+			'hasDM' => ['type' => 'checkbox', 'label' => 'GUI login'],
+			'hasX11' => ['type' => 'checkbox', 'label' => 'X11 available'],
+			'hardware' => ['type' => 'text', 'label' => 'Recommended hardware'],
+			'desc' => ['type' => 'text', 'label' => 'Short description'],
+			'full' => ['type' => 'textarea', 'label' => 'Detailed description', 'placeholder' => 'Please enter detailed setup variant description'],
+			'packages' => ['type' => 'textarea', 'label' => 'Packages', 'placeholder' => 'Please enter package names which should be installed in that setup variant. One line - one package.'],
+			];
+
+		$code = '';
+		foreach($fields as $key => $fdesc) {
+			$code .= UiCore::getInput($key, (is_array($variant[$key]) ? implode("\n", $variant[$key]) : $variant[$key]), '', $fdesc);
+		}
+		$ret .= UiCore::editForm('create', NULL, $code);
+
+
+		return $ret;
+
+
 	}
 }
