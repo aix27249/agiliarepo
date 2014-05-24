@@ -4,6 +4,7 @@ Page::loadModule('repository');
 class Module_fileview extends RepositoryModule {
 	static $styles = ['fileview.css'];
 	public function run() {
+		if (!Auth::user()) return '<h1>Sorry, authenticated users only</h1><p>Due to high server load, we limited some functions to authorized users only. Please log in to access this feature.</p> ';
 
 		$ret = '';
 		$md5 = trim(@$this->page->path[2]);
