@@ -54,12 +54,13 @@ class Module_api extends RepositoryModule {
 	}
 	public function repositories_call_packages($args) {
 		if (!isset($args[0])) return $this->error('400 Bad Request', 'Repository name not specified');
-		$query = ['repositories.repository' => $args[0]];
+		$ematch = ['repository' => $args[0]];
 		$opts = $_GET;
-		if (isset($opts['latest'])) $query['repositories.latest'] = true;
-		if (isset($opts['osversion'])) $query['repositories.osversion'] = $opts['osversion'];
-		if (isset($opts['branch'])) $query['repositories.branch'] = $opts['branch'];
-		if (isset($opts['subgroup'])) $query['repositories.subgroup'] = $opts['subgroup'];
+		if (isset($opts['latest'])) $ematch['latest'] = true;
+		if (isset($opts['osversion'])) $ematch['osversion'] = $opts['osversion'];
+		if (isset($opts['branch'])) $ematch['branch'] = $opts['branch'];
+		if (isset($opts['subgroup'])) $ematch['subgroup'] = $opts['subgroup'];
+		$query = ['repositories' => ['$elemMatch' => $ematch]];
 	
 		$pkgs = self::db()->packages->distinct('md5', $query);
 		return json_encode($pkgs, JSON_PRETTY_PRINT);

@@ -8,7 +8,7 @@ class Module_index extends RepositoryModule {
 		 * PHP mode is simplier in code, safer to pass arguments from user, requires no shell calls, but about 7x times slower.
 		 *
 		 * mongoexport example here:
-		 * system('mongoexport -d ' . $mongo_db_name . ' -c packages -q \'{"repositories.repository":"master","repositories.branch":"core","repositories.osversion":"8.1"}\'');
+		 * system('mongoexport -d ' . $mongo_db_name . ' -c packages -q \'{"repositories: {"$elemMatch" : {repository":"master","branch":"core","osversion":"8.1"}}\'');
 		 */
 
 		if (in_array('__pr__', $this->page->path, true)) {
@@ -28,11 +28,15 @@ class Module_index extends RepositoryModule {
 			header('Pragma: public');
 			unset($this->page->path[($plength-1)]);
 		}
+
+		$ematch = [];
 		if (isset($this->page->path[2])) $query['arch'] = Package::queryArchSet($this->page->path[2]);
-		if (isset($this->page->path[3])) $query['repositories.repository'] = $this->page->path[3];
-		if (isset($this->page->path[4])) $query['repositories.osversion'] = $this->page->path[4];
-		if (isset($this->page->path[5])) $query['repositories.branch'] = $this->page->path[5];
-		if (isset($this->page->path[6])) $query['repositories.subgroup'] = $this->page->path[6];
+		if (isset($this->page->path[3])) $ematch['repository'] = $this->page->path[3];
+		if (isset($this->page->path[4])) $ematch['osversion'] = $this->page->path[4];
+		if (isset($this->page->path[5])) $ematch['branch'] = $this->page->path[5];
+		if (isset($this->page->path[6])) $ematch['subgroup'] = $this->page->path[6];
+
+		if (count($ematch)>0) $query['repositories'] = ['$elemMatch' => $ematch];
 
 		$format = 'xml';
 		if (@$_GET['format']==='json') $format = 'json';
