@@ -244,6 +244,8 @@ class Module_pkgview extends RepositoryModule {
 		$package->repositories = $paths;
 		$package->save();
 
+		$task_options['package_name'] = $package->name;
+		AsyncTask::create($user->name, 'find_old_versions', 'Scan repository for an old versions after moving ' . $package->name, $task_options);
 		header('Location: /pkgview/' . $package->md5);
 
 	}
@@ -313,6 +315,8 @@ class Module_pkgview extends RepositoryModule {
 			$package->save();
 
 		}
+		$task_options['package_name'] = $package->name;
+		AsyncTask::create($user->name, 'find_old_versions', 'Scan repository for an old versions after moving ' . $package->name, $task_options);
 
 
 		header('Location: /pkgview/' . $package->md5);
@@ -345,6 +349,9 @@ class Module_pkgview extends RepositoryModule {
 		}
 		$package->repositories = $newset;
 		$package->save();
+
+		$task_options['package_name'] = $package->name;
+		AsyncTask::create($user->name, 'find_old_versions', 'Scan repository for an old versions after moving ' . $package->name, $task_options);
 
 		return 'OK';
 
