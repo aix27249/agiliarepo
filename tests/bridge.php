@@ -2,6 +2,7 @@
 require_once '../core/bootstrap.php';
 class RepositoryBridge extends MongoDBAdapter {
 	public $mysqli = NULL;
+	public $packages_imported = [];
 	public function __construct($dbhost, $dbusername, $dbpass, $dbname) {
 		$this->mysqli = new mysqli($dbhost, $dbusername, $dbpass, $dbname);
 		if (mysqli_connect_errno()) {
@@ -91,6 +92,8 @@ class RepositoryBridge extends MongoDBAdapter {
 			self::db()->packages->insert($p);
 			
 			self::db()->package_files->insert(['md5' => $p['md5'], 'files' => $pkg->filelist()]);
+
+			$this->packages_imported[] = $p['name'];
 
 		}
 		$stmt->free_result();

@@ -191,10 +191,12 @@ class Package extends MongoDBObject {
 
 		$query = ['name' => $this->name];
 		if ($path!==NULL) {
-			$query['repositories.repository'] = $repository;
-			$query['repositories.osversion'] = $osversion;
-			$query['repositories.branch'] = $branch;
-			$query['repositories.subgroup'] = $subgroup;
+			$query['repositories'] = ['$elemMatch' => [
+				'repository' => $repository,
+				'branch' => $branch,
+				'osversion' => $osversion,
+				'subgroup' => $subgroup,
+				]];
 		}
 		if ($arch_hint!==NULL) $archsubset = $arch_hint;
 		else $archsubset = self::queryArchSet($this->arch);

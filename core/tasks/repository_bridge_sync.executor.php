@@ -11,6 +11,15 @@ class RepositoryBridgeSyncTask extends AsyncTask {
 		$bridge = new RepositoryBridge($dbhost, $dbusername, $dbpass, $dbname);
 		$this->setProgress(0, 100, 'Searching for new packages');
 		$bridge->getNewPackages($this);
+
+		// After bridging, run rescan for latest ones at these packages
+
+		$task_options = [
+			'package_name' => array_values(array_unique($bridge->packages_imported)),
+			'repositories' => ['master']
+			];
+		AsyncTask::create('@system', 'find_old_versions', 'Scan repository for an old versions after bridge sync', $task_options);
+
 		$this->setStatus('complete', 'Finished');
 	}
 }

@@ -11,8 +11,15 @@ class FindOldVersionsTask extends AsyncTask {
 		if (isset($this->options['repositories'])) $repositories = $this->options['repositories'];
 		else $repositories = Repository::getList();
 
-		$selected_package_name = NULL;
-		if (isset($this->options['package_name'])) $selected_package_name = trim($this->options['package_name']);
+		$selected_package_names = [];
+		if (isset($this->options['package_name'])) {
+			if (is_array($this->options['package_name'])) {
+				$selected_package_names = $this->options['package_name'];
+			}
+			else {
+				$selected_package_names[] = trim($this->options['package_name']);
+			}
+		}
 
 		$archsets = ['i686' => Package::queryArchSet('i686'), 'x86_64' => Package::queryArchSet('x86_64')];
 		$checkcount = 0;
@@ -25,14 +32,23 @@ class FindOldVersionsTask extends AsyncTask {
 						foreach($archsets as $arch => $archset) {
 							$path = implode('/', [$reponame, $osversion, $branch, $subgroup]);
 							$this->setProgress($checkcount, count($repositories), 'Processing ' . $path);
+							$query = [
+								'repositories' => ['$elemMatch' => [
+									'repository' => $reponame,
+									'branch' => $branch,
+									'osversion' => $osversion,
+									'subgroup' => $subgroup,
+									]],
+								'arch' => $archset
+								];
 
-							$query = ['repositories.repository' => $reponame, 
+							/*$query = ['repositories.repository' => $reponame, 
 								'repositories.osversion' => $osversion, 
 								'repositories.branch' => $branch, 
 								'repositories.subgroup' => $subgroup,
 								'arch' => $archset
-								];
-							if (trim($selected_package_name)!=='') $pnames = [$selected_package_name];
+								];*/
+							if (count($selected_package_names)>0) $pnames = $selected_package_names;
 							else {
 								$pnames = self::db()->packages->distinct('name', $query);
 							}
@@ -51,22 +67,32 @@ class FindOldVersionsTask extends AsyncTask {
 				foreach($rep->branches() as $branch) {
 					foreach($rep->subgroups() as $subgroup) {
 						foreach($archsets as $arch => $archset) {
+							$query = [
+								'repositories' => ['$elemMatch' => [
+									'repository' => $reponame,
+									'branch' => $branch,
+									'osversion' => $osversion,
+									'subgroup' => $subgroup,
+									]],
+								'arch' => $archset
+								];
+							/*
 							$query = ['repositories.repository' => $reponame, 
 								'repositories.osversion' => $osversion, 
 								'repositories.branch' => $branch, 
 								'repositories.subgroup' => $subgroup,
 								'arch' => $archset
 								];
-
-							if (trim($selected_package_name)!=='') {
-								echo "PNAME specified as $selected_package_name\n";
-								$pnames = [$selected_package_name];
+							*/
+							if (count($selected_package_names)>0) {
+								echo "PNAME specified as " . implode(', ', $selected_package_names) . "\n";
+								$pnames = $selected_package_names;
 							}
 							else {
 								echo "Querying distinct names, query: " . print_r($query, true) . "\n";
 								$pnames = self::db()->packages->distinct('name', $query);
 							}
-							
+
 
 							echo "At $counter: pnames pack, size " . count($pnames) . "\n";
 							foreach($pnames as $package_name) {
