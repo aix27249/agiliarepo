@@ -32,17 +32,25 @@ class Module_admin_setup_variants extends RepositoryModule {
 	}
 
 	public function action_list($noheader = false) {
-		$variants = self::db()->setup_variants->find();
+		$repos = self::db()->setup_variants->distinct('repository');
+		$osversions = self::db()->setup_variants->distinct('osversion');
 
 		$ret = '';
 		if (!$noheader) $ret .= '<h1>Setup variants</h1>';
-		$ret .= '<ul>';
 
-		foreach($variants as $v) {
-			$path = $v['repository'] . '/' . $v['osversion'] . '/' . $v['name'];
-			$ret .= '<li><a href="/admin/setup_variants/view/' . $path . '">' . $path . '</a></li>';
+		foreach($repos as $repo_name) {
+			foreach($osversions as $osversion) {
+				$variants = self::db()->setup_variants->find(['repository' => $repo_name, 'osversion' => $osversion]);
+				if ($variants->count()===0) continue;
+				$ret .= '<h2>' . $repo_name . '/' . $osversion . '</h2>';
+				$ret .= '<ul>';
+				foreach($variants as $v) {
+					$path = $v['repository'] . '/' . $v['osversion'] . '/' . $v['name'];
+					$ret .= '<li><a href="/admin/setup_variants/view/' . $path . '">' . $path . '</a></li>';
+				}
+				$ret .= '</ul>';
+			}
 		}
-		$ret .= '</ul>';
 
 		return $ret;
 	}
