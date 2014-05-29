@@ -52,13 +52,18 @@ class CreateIsoTask extends AsyncTask {
 		echo "Reducing\n";
 		$tree = new PackageTree($packages);
 		
-		$query = ['md5' => ['$in' => $tree->dep_reduced($package_names, true)]];
+		try {
+			$query = ['md5' => ['$in' => $tree->dep_reduced($package_names, true)]];
+		}
+		catch (Exception $e) {
+			$this->setProgress(0, 100, 'Package tree error: ' . $e->getMessage());
+			die('ISO creation failed');
+		}
 
 		
 		unset($tree);
 
 		// Call IsoBuilder to build this stuff
-		// TODO: pass setup variants into there
 		IsoBuilder::makeISO($this->options['iso_name'], $this->options['iso_template'], $query, $setup_variants, $this->owner, $this);
 
 		$this->setProgress(100, 100, 'Done');
