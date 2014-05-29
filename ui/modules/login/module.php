@@ -14,6 +14,9 @@ class Module_login extends Module {
 				$error = 'Login and/or password incorrect';
 				if (isset($_POST['ajax'])) die($error);
 			}
+			else {
+				header('Location: ' . $_SERVER['REQUEST_URI']);
+			}
 		}
 
 		$user = Auth::user();
