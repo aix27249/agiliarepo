@@ -67,7 +67,7 @@ class Module_admin_setup_variants extends RepositoryModule {
 		$repository_name = $this->page->path[4];
 		$repository = new Repository($repository_name);
 		$ret .= '<h3>Repository: ' . $repository_name . '</h3>';
-		if (!isset($this->page->path[4])) {
+		if (!isset($this->page->path[5])) {
 			if (@$_POST['__submit_form_id']==='create_router_osversion') {
 				header('Location: /admin/setup_variants/create/' . $repository_name . '/' . $_POST['osversion']);
 				die();
