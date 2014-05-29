@@ -11,7 +11,7 @@ class Module_auth extends Module {
 		$user_id = $_COOKIE['uid'];
 		$hash = $_COOKIE['hash'];
 		$ip = $_SERVER['REMOTE_ADDR'];
-		Auth::try_login($user_id, $hash, $ip);
+		Auth::tryLogin($user_id, $hash, $ip);
 
 	}
 

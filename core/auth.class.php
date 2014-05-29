@@ -45,13 +45,20 @@ class Auth extends MongoDBAdapter {
 		return static::$user;
 	}
 
-	public static function try_login($user_id, $hash, $ip) {
+	public static function tryLogin($user_id, $hash, $ip) {
 
 		$session = self::db()->user_sessions->findOne(['uid' => $user_id, 'hash' => $hash, 'ip' => $ip]);
 		if (!$session)  return NULL;
 
 		static::$user = new User($user_id);
 		return static::$user;
+	}
+
+	public static function setUser($user) {
+		if ($user instanceOf User) static::$user = $user;
+		else {
+			static::$user = User::byName($user);
+		}
 	}
 
 	public static function logout($all_sessions = false, $hash = NULL, $ip = NULL) {
