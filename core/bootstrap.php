@@ -8,3 +8,4 @@ require_once 'repository.class.php';
 require_once 'taskmanager.class.php';
 require_once 'isobuilder.class.php';
 require_once 'package_index.class.php';
+require_once 'auth.class.php';
