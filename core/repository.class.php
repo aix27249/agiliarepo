@@ -5,6 +5,36 @@ class Repository extends MongoDBAdapter {
 	public $name = NULL;
 	public $settings = NULL;
 
+	/* Constructor. Accepts repository name. */
+	public function __construct ($repo_name) {
+		$this->name = $repo_name;
+		$this->settings = self::db()->repositories->findOne(['name' => $repo_name]);
+	}
+
+	public function __toString() {
+		return $this->name;
+	}
+
+	/* Map properties to settings */
+	public function __set($key, $value) {
+		$this->settings[$key] = $value;
+	}
+
+	public function __get($key) {
+		return @$this->settings[$key];
+	}
+
+
+
+	/* ------- Clone, merge, delete --------- */
+
+	/* Creates a clone of repository
+	 * Required permissions:
+	 * source: read
+	 * global: create_repository
+	 *
+	 * FIXME: make it non-static and accept target name and task pointer only
+	 */
 	public static function createClone($from, $to, $task = NULL) {
 		$any_found = false;
 		$source = new Repository($from);
@@ -38,6 +68,13 @@ class Repository extends MongoDBAdapter {
 		}
 		return $any_found;
 	}
+
+	/* Deletes repository
+	 * Required permissions:
+	 * repository: admin
+	 *
+	 * FIXME: make it non-static, accept task pointer only
+	 */
 	public static function delete($repo_name, $task = NULL) {
 		$rep = new Repository($repo_name);
 		$count = $rep->count();
@@ -64,28 +101,25 @@ class Repository extends MongoDBAdapter {
 
 
 
-	public function __construct ($repo_name) {
-		$this->name = $repo_name;
-		$this->settings = self::db()->repositories->findOne(['name' => $repo_name]);
-	}
+
+	/* Returns count of packages in repository */
 	public function count() {
 		return self::db()->packages->count(['repositories.repository' => $this->name]);
 	}
 
-	public function __toString() {
-		return $this->name;
-	}
-
+	/* Returns repository owner */
 	public function owner() {
 		$owner = @$this->settings['owner'];
 		if (!$owner) return 'admin';
 		return $owner;
 	}
 
+	/* Returns repository settings, such as permissions */
 	public function settings() {
 		return $this->settings;
 	}
 
+	/* Returns user names which has specified permission on this repository */
 	public function whoCan($perm) {
 		$permissions = @$this->settings['permissions'];
 
@@ -94,6 +128,9 @@ class Repository extends MongoDBAdapter {
 		return ['admin'];
 	}
 
+	/* Checks if specified user has specified permission.
+	 * Returns true if it can do this, or false if he can't.
+	 */
 	public function can($user, $perm) {
 		if ($user==='admin') return true;
 		$whocan = $this->whoCan($perm);
@@ -105,10 +142,18 @@ class Repository extends MongoDBAdapter {
 		return false;
 	}
 
+	/* Returns git remote URL
+	 * FIXME: git model isn't implemented yet 
+	 */
 	public function gitRemote() {
 		return @$this->settings['git_remote'];
 	}
 
+	/* Returns OS versions inside this repository
+	 * By default, returns all of it, based on repository settings.
+	 * If user and permission are specified, returns only ones on which this user has specified permission. (TODO)
+	 * If $force_scan is set to true, returns OS versions from packages inside repository, instead of settings. In other words, it returns 'de-facto' data.
+	 */
 	public function osversions($user = NULL, $permission = NULL, $force_scan = false) {
 		$settings = @$this->settings['osversions'];
 		$defacto = [];
@@ -130,6 +175,12 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
+
+	/* Returns branches inside this repository
+	 * By default, returns all of it, based on repository settings.
+	 * If user and permission are specified, returns only ones on which this user has specified permission. (TODO)
+	 * If $force_scan is set to true, returns branches from packages inside repository, instead of settings. In other words, it returns 'de-facto' data.
+	 */
 	public function branches($osversion = NULL, $user = NULL, $permission = NULL, $force_scan = false) {
 		$settings = @$this->settings['branches'];
 		$defacto = [];
@@ -152,6 +203,11 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
+	/* Returns subgroups inside this repository
+	 * By default, returns all of it, based on repository settings.
+	 * If user and permission are specified, returns only ones on which this user has specified permission. (TODO)
+	 * If $force_scan is set to true, returns subgroups from packages inside repository, instead of settings. In other words, it returns 'de-facto' data.
+	 */
 	public function subgroups($osversion = NULL, $branch = NULL, $user = NULL, $permission = NULL, $force_scan = false) {
 		$settings = @$this->settings['subgroups'];
 		$defacto = [];
@@ -174,30 +230,36 @@ class Repository extends MongoDBAdapter {
 	}
 
 
-	public function __set($key, $value) {
-		$this->settings[$key] = $value;
-	}
-
-	public function __get($key) {
-		return @$this->settings[$key];
-	}
-
 	public function setPermissions($perms) {
 		foreach(['read', 'write', 'admin'] as $perm) {
 			$this->settings['permissions'][$perm] = array_values($perms[$perm]);
 		}
 	}
+
+	/* Update repository settings: write to database new values
+	 * Required permissions: 
+	 * repository: admin
+	 */
+
 	public function update() {
 		$this->settings['name'] = $this->name;
 		self::db()->repositories->update(['name' => $this->name], $this->settings, ['upsert' => true]);
 	}
 
+	/* Set new settings 
+	 * Required permissions:
+	 * repository: admin
+	 *
+	 */
 	public function setSettings($settings) {
 		unset($settings['_id']);
 		$settings['name'] = $this->name;
 		$this->settings = $settings;
 	}
 
+	/* Returns repository list.
+	 * If user and permission are specified, return only ones on which user can specified permission
+	 */
 	public static function getList($user = NULL, $permission = NULL, $force_scan = false) {
 		$meta = self::db()->repositories->distinct('name');
 		$repos = [];
@@ -215,12 +277,14 @@ class Repository extends MongoDBAdapter {
 		return $ret;
 	}
 
+	/* Returns default package path */
 	public function defaultPath($prefix = '') {
 		if ($prefix!='' && strrpos($prefix, '/')!==strlen($prefix)-1) $prefix .= '/';
 		if (isset($this->settings['default_path'])) return $prefix . $this->settings['default_path'];
 		return $prefix . $this->name;
 	}
 
+	/* Returns setup variants related to this repository */
 	public function setup_variants($osversions = NULL) {
 		$query = ['repository' => $this->name];
 		if (is_array($osversions)) $query['osversion'] = ['$in' => $osversions];
