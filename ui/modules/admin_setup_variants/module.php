@@ -1,14 +1,14 @@
 <?php
 Page::loadModule('repository');
 Page::loadModule('uicore');
-class Module_setup_variants extends RepositoryModule {
+class Module_admin_setup_variants extends RepositoryModule {
 	public static $styles = ['setup_variants.css'];
 	public static $scripts = ['setup_variants.js'];
 	public function run() {
 		if ($this->blockname==='sidebar') return $this->run_sidebar();
 		// Path layout: /setup_variants/[action]/[repository]/[osver]/[variant_name]
-		if (isset($this->page->path[2])) {
-			$method = 'action_' . $this->page->path[2];
+		if (isset($this->page->path[3])) {
+			$method = 'action_' . $this->page->path[3];
 			if (method_exists($this, $method)) return $this->$method();
 			else return 'Method ' . $method . ' not found';
 		}
@@ -21,10 +21,10 @@ class Module_setup_variants extends RepositoryModule {
 
 		
 		foreach($links as $action => $title) {
-			$ret .= '<li><a href="/setup_variants/' . $action . '">' . $title . '</a></li>';
+			$ret .= '<li><a href="/admin/setup_variants/' . $action . '">' . $title . '</a></li>';
 		}
 
-		if (isset($this->page->path[2])) {
+		if (isset($this->page->path[3])) {
 			$ret .= '<h2>Available</h2>';
 			$ret .= $this->action_list(true);
 		}
@@ -40,7 +40,7 @@ class Module_setup_variants extends RepositoryModule {
 
 		foreach($variants as $v) {
 			$path = $v['repository'] . '/' . $v['osversion'] . '/' . $v['name'];
-			$ret .= '<li><a href="/setup_variants/view/' . $path . '">' . $path . '</a></li>';
+			$ret .= '<li><a href="/admin/setup_variants/view/' . $path . '">' . $path . '</a></li>';
 		}
 		$ret .= '</ul>';
 
@@ -54,9 +54,9 @@ class Module_setup_variants extends RepositoryModule {
 		// TODO: check if user can manage setup variants in SPECIFIC repository
 
 		$ret = '<h1>Create new setup variant</h1>';
-		if (!isset($this->page->path[3])) {
+		if (!isset($this->page->path[4])) {
 			if (@$_POST['__submit_form_id']==='create_router_repository') {
-				header('Location: /setup_variants/create/' . $_POST['repository']);
+				header('Location: /admin/setup_variants/create/' . $_POST['repository']);
 				die();
 			}
 			$code = UiCore::getInput('repository', Settings::get('default_repository'), '', ['type' => 'select', 'label' => 'Repository', 'options' => Repository::getList($user, 'admin')]);
@@ -64,12 +64,12 @@ class Module_setup_variants extends RepositoryModule {
 			return $ret;
 		}
 
-		$repository_name = $this->page->path[3];
+		$repository_name = $this->page->path[4];
 		$repository = new Repository($repository_name);
 		$ret .= '<h3>Repository: ' . $repository_name . '</h3>';
 		if (!isset($this->page->path[4])) {
 			if (@$_POST['__submit_form_id']==='create_router_osversion') {
-				header('Location: /setup_variants/create/' . $repository_name . '/' . $_POST['osversion']);
+				header('Location: /admin/setup_variants/create/' . $repository_name . '/' . $_POST['osversion']);
 				die();
 			}
 
@@ -78,7 +78,7 @@ class Module_setup_variants extends RepositoryModule {
 			return $ret;
 
 		}
-		$osversion = $this->page->path[4];
+		$osversion = $this->page->path[5];
 
 		$ret .= '<h3>OS version: ' . $osversion . '</h3>';
 		if (@$_POST['__submit_form_id']==='create') {
@@ -100,7 +100,7 @@ class Module_setup_variants extends RepositoryModule {
 				$setup_variant['hasX11'] = isset($_POST['hasX11']);
 
 				self::db()->setup_variants->insert($setup_variant);
-				header('Location: /setup_variants/view/' . $repository_name . '/' . $osversion . '/' . $setup_variant['name']);
+				header('Location: /admin/setup_variants/view/' . $repository_name . '/' . $osversion . '/' . $setup_variant['name']);
 				die();
 			}
 			catch (Exception $e) {
@@ -131,9 +131,9 @@ class Module_setup_variants extends RepositoryModule {
 	}
 
 	public function action_view() {
-		$repository_name = $this->page->path[3];
-		$osversion = $this->page->path[4];
-		$variant_name = $this->page->path[5];
+		$repository_name = $this->page->path[4];
+		$osversion = $this->page->path[5];
+		$variant_name = $this->page->path[6];
 
 		$setup_variant = self::db()->setup_variants->findOne(['repository' => $repository_name, 'osversion' => $osversion, 'name' => $variant_name]);
 		$ret = '<h1>' . $setup_variant['name'] . '</h1>';
@@ -149,7 +149,7 @@ class Module_setup_variants extends RepositoryModule {
 			</div>';
 
 		$ret .= '</div>';
-		if (Auth::user() && Auth::user()->can('edit_setup_variants')) $ret .= '<div><a href="/setup_variants/edit/' . $repository_name . '/' . $osversion . '/' . $variant_name . '">Edit</a></div>';
+		if (Auth::user() && Auth::user()->can('edit_setup_variants')) $ret .= '<div><a href="/admin/setup_variants/edit/' . $repository_name . '/' . $osversion . '/' . $variant_name . '">Edit</a></div>';
 		$ret .= '<h2>Packages: ' . count($setup_variant['packages']) . '</h2><a id="verbose_link" href="javascript:setup_variants.switchMode(\'verbose\');">Show verbose list</a><br /><br />';
 		$package_names = $setup_variant['packages'];
 
@@ -269,9 +269,9 @@ class Module_setup_variants extends RepositoryModule {
 		if (!$user) return 'Only registered users can edit anything';
 		if (!$user->can('edit_setup_variants')) return 'You have no permission to edit setup variants';
 
-		$repository_name = $this->page->path[3];
-		$osversion = $this->page->path[4];
-		$variant_name = $this->page->path[5];
+		$repository_name = $this->page->path[4];
+		$osversion = $this->page->path[5];
+		$variant_name = $this->page->path[6];
 
 		$variant = self::db()->setup_variants->findOne(['name' => $variant_name, 'repository' => $repository_name, 'osversion' => $osversion]);
 
@@ -296,7 +296,7 @@ class Module_setup_variants extends RepositoryModule {
 				$setup_variant['hasX11'] = isset($_POST['hasX11']);
 
 				self::db()->setup_variants->update(['name' => $variant_name, 'repository' => $repository_name, 'osversion' => $osversion], $setup_variant);
-				header('Location: /setup_variants/view/' . $repository_name . '/' . $osversion . '/' . $setup_variant['name']);
+				header('Location: /admin/setup_variants/view/' . $repository_name . '/' . $osversion . '/' . $setup_variant['name']);
 				die();
 			}
 			catch (Exception $e) {

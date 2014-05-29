@@ -14,6 +14,7 @@ class Module_admin extends AdminModule {
 			'users' => 'Users',
 			'groups' => 'Groups',
 			'repositories' => 'Repositories',
+			'setup_variants' => 'Setup variants',
 			'actions' => 'Actions',
 		];
 
