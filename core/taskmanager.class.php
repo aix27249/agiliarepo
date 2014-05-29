@@ -3,6 +3,7 @@ require_once 'mongo.class.php';
 
 class AsyncTask extends MongoDBAdapter {
 	private $task;
+	public static $current = NULL;
 	public function __construct($id = NULL) {
 		if (is_string($id)) {
 			$task = self::db()->tasks->findOne(['_id' => new MongoId($id)]);
@@ -12,6 +13,8 @@ class AsyncTask extends MongoDBAdapter {
 		else if (is_array($id)) {
 			$this->task = $id;
 		}
+		self::$current = $this;
+		if (!Auth::user()) Auth::setUser($this->owner);
 	}
 	public function __get($key) {
 		return @$this->task[$key];
