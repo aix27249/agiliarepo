@@ -33,24 +33,22 @@ class Repository extends MongoDBAdapter {
 	 * source: read
 	 * global: create_repository
 	 *
-	 * FIXME: make it non-static and accept target name and task pointer only
 	 */
-	public static function createClone($from, $to, $task = NULL) {
+	public function cloneTo($to) {
 		$any_found = false;
-		$source = new Repository($from);
-		$count = $source->count();
+		$count = $this->count();
 		$counter = 0;
 		
-		foreach(self::db()->packages->find(['repositories.repository' => $from]) as $pkg) {
+		foreach(self::db()->packages->find(['repositories.repository' => $this->name]) as $pkg) {
 			$counter++;
 			$any_found = true;
 			$records = [];
 			foreach($pkg['repositories'] as $record) {
-				if ($record['repository']!==$from) continue;
+				if ($record['repository']!==$this->name) continue;
 				$record['repository'] = $to;
 				$records[] = $record;
 			}
-			if ($task) $task->setProgress($counter, $count);
+			if (AsyncTask::$current) AsyncTask::$current->setProgress($counter, $count);
 			self::db()->packages->findAndModify(
 				['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
 				[
@@ -60,7 +58,7 @@ class Repository extends MongoDBAdapter {
 		}
 
 		// Copy configuration record, if any
-		$configuration = self::db()->repositories->findOne(['name' => $from]);
+		$configuration = self::db()->repositories->findOne(['name' => $this->name]);
 		if ($configuration) {
 			unset($configuration['_id']);
 			$configuration['name'] = $to;
@@ -69,26 +67,37 @@ class Repository extends MongoDBAdapter {
 		return $any_found;
 	}
 
+	
+	/* Merge specified repository into this
+	 * Logic: 
+	 * 	1. every os version and branch, which contains in $repo_name, but not in $this, should be added.
+	 * 	2. every package which contains in $repo_name, but not in $this, should be added to $this at the same location.
+	 *
+	 * TODO: implement
+	 */
+	public function merge($repo_name) {
+	}
+
+
 	/* Deletes repository
 	 * Required permissions:
 	 * repository: admin
 	 *
-	 * FIXME: make it non-static, accept task pointer only
 	 */
-	public static function delete($repo_name, $task = NULL) {
-		$rep = new Repository($repo_name);
-		$count = $rep->count();
+
+	public function delete() {
+		$count = $this->count();
 		$counter = 0;
 
-		foreach(self::db()->packages->find(['repositories.repository' => $repo_name]) as $pkg) {
+		foreach(self::db()->packages->find(['repositories.repository' => $this->name]) as $pkg) {
 			$counter++;
 			$newset = [];
 			foreach($pkg['repositories'] as $record) {
-				if ($record['repository']==$repo_name) continue;
+				if ($record['repository']==$this->name) continue;
 				$newset[] = $record;
 			}
 
-			if ($task) $task->setProgress($counter, $count);
+			if (AsyncTask::$current) AsyncTask::$current->setProgress($counter, $count);
 			self::db()->packages->findAndModify(
 				['md5' => $pkg['md5'], '_rev' => $pkg['_rev']], 
 				[
@@ -96,7 +105,7 @@ class Repository extends MongoDBAdapter {
 				'$inc' => ['_rev' => 1]
 				]);
 		}
-		self::db()->repositories->remove(['name' => $repo_name]);
+		self::db()->repositories->remove(['name' => $this->name]);
 	}
 
 

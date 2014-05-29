@@ -9,7 +9,14 @@ class RepositoryCloneTask extends AsyncTask {
 		$to = $this->options['to'];
 
 		$this->setProgress(0, 100, 'Cloning in progress');
-		Repository::createClone($from, $to, $this);
+		try {
+			$repository = new Repository($from);
+			$repository->cloneTo($to);
+		}
+		catch (Exception $e) {
+			$this->setStatus('failed', $e->getMessage());
+			die($e->getMessage());
+		}
 		$this->setStatus('complete', 'Finished');
 	}
 }

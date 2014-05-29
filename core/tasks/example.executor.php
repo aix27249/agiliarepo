@@ -7,7 +7,7 @@ class ExampleTask extends AsyncTask {
 		$this->setStatus('running');
 		$sleep_time = intval($this->options['sleep_time']);
 		for ($i=0; $i<$sleep_time; $i++) {
-			$this->setProgress(($i+1), $sleep_time, 'Sleeping ' . $i . ' of ' . $sleep_time);
+			$this->setProgress(($i+1), $sleep_time, 'Sleeping ' . $i . ' of ' . $sleep_time . ' as ' . Auth::user()->name . ', task id: ' . AsyncTask::$current->_id);
 			sleep(1);
 		}
 		$this->setStatus('complete', 'Finished');

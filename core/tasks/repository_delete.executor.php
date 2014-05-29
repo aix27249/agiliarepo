@@ -8,7 +8,15 @@ class RepositoryDeleteTask extends AsyncTask {
 		$repname = $this->options['repname'];
 
 		$this->setProgress(0, 100, 'Delete in progress');
-		Repository::delete($repname, $this);
+		try {
+			$repository = new Repository($repname);
+			$repository->delete();
+		}
+		catch (Exception $e) {
+			$this->setStatus('failed', $e->getMessage());
+			die();
+		}
+
 		$this->setStatus('complete', 'Finished');
 	}
 }
