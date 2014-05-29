@@ -22,6 +22,7 @@ class Module_admin_actions extends AdminModule {
 			'find_old_versions' => 'Rescan for latest versions',
 			'mirror' => 'Clone external repository',
 			'create_iso' => 'Create an ISO',
+			'bridge' => 'Run bridge sync',
 			];
 
 		$ret .= '<ul>';
@@ -119,14 +120,14 @@ class Module_admin_actions extends AdminModule {
 		/* Form wizard will be here */
 
 		$slides = [];
-		
+
 		// Select a repository
 		$slide = '<h2>Repository and architecture</h2><p>At this moment, only one repository can be used to build an ISO. Ability to build ISO image using multiple repositories will be added in future.</p>';
-	       	$slide .= UiCore::getInput('repository', Settings::get('default_repository'), '', ['type' => 'select', 'label' => 'Repository to use', 'options' => Repository::getList()]);
-	       	$slide .= UiCore::getInput('arch', '', '', ['type' => 'select', 'label' => 'Architecture', 'options' => ['x86', 'x86_64', 'any']]);
+		$slide .= UiCore::getInput('repository', Settings::get('default_repository'), '', ['type' => 'select', 'label' => 'Repository to use', 'options' => Repository::getList()]);
+		$slide .= UiCore::getInput('arch', '', '', ['type' => 'select', 'label' => 'Architecture', 'options' => ['x86', 'x86_64', 'any']]);
 		$slides[] = $slide;
 
-		
+
 		// Select OS versions, branches and subgroups
 		$slide = '<h2>OS versions, branches, subgroups</h2><p>Select which packages should be used.</p>';
 		if (isset($_POST['repository'])) {
@@ -178,16 +179,16 @@ class Module_admin_actions extends AdminModule {
 		$ret = '<h1>Create an iso image</h1>';
 
 		$ret .= UiCore::slideForm('create_iso_form', $slides, true);
-		
+
 
 		if (@$_POST['__submit_form_id']==='create_iso_form') {
 
 			$task_options = [
 				'repository' => trim($_POST['repository']),
-				'arch' => trim($_POST['arch']),
-				'iso_template' => trim($_POST['iso_template']),
-				'iso_name' => trim($_POST['iso_name'])
-				];
+					'arch' => trim($_POST['arch']),
+					'iso_template' => trim($_POST['iso_template']),
+					'iso_name' => trim($_POST['iso_name'])
+					];
 
 			$repository = new Repository($task_options['repository']);
 			$task_options['osversions'] = [];
@@ -229,5 +230,13 @@ class Module_admin_actions extends AdminModule {
 
 		return $ret;
 	}
+
+	public function action_bridge() {
+		$task_id = AsyncTask::create(Auth::user()->name, 'repository_bridge_sync', 'Bridge sync');
+		header('Location: /taskmon/view/' . $task_id);
+		return 'Task created';
+
+	}
+
 
 }
