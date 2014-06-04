@@ -11,8 +11,8 @@ function taskmon_poll(task_id) {
 	$.getJSON('/taskmon/poll/' + task_id, function(data) {
 		//console.log('poll call response: ' + JSON.stringify(data));
 		taskmon_setprogress(task_id, data.progress);
-		$("#taskprogress_" + task_id + " .task_state").text(data.current_state);
-		$("#taskprogress_" + task_id + " .task_status").text(data.status);
+		$("#taskprogress_" + task_id + " .task_state").html(data.current_state);
+		$("#taskprogress_" + task_id + " .task_status").html(data.status);
 
 
 		if (taskmon_execute_callbacks) {

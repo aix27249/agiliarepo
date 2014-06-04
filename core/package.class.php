@@ -246,6 +246,7 @@ class Package extends MongoDBObject {
 
 class PackageTree {
 	private $packages = [];
+	private $errors = []; // Error container
 	public function __construct($packages = NULL) {
 		if ($packages) $this->add($packages);
 	}
@@ -293,7 +294,7 @@ class PackageTree {
 		$ret[] = $package['md5'];
 		foreach($package['dependencies'] as $dep) {
 			$dep_package = self::find_package($dep['name'], $packages);
-			if ($dep_package===NULL) throw new Exception('No package "' . $dep['name'] . '" to satisfy dependency');
+			if ($dep_package===NULL) throw new Exception('<a href="/pkgview/' . $package['md5'] . '">' . $package['name'] . '-' . $package['version'] . '-' . $package['arch'] . '-' . $package['build'] . '</a> has broken deps: cannot find "' . $dep['name'] . '"');
 			if (in_array($dep_package['md5'], $ret, true)) {
 				echo "Package " . $dep_package['name'] . " is already selected\n";
 				continue;
@@ -348,6 +349,16 @@ class PackageTree {
 			$vcmp = VersionCompare::strverscmp($package1['build'], $package2['build']);
 		}
 		return $vcmp;
+	}
+
+	public function resetErrors() {
+		$this->errors = [];
+	}
+	public function errors() {
+		return $this->errors;
+	}
+	public function hasErrors() {
+		return (count($this->errors)>0);
 	}
 
 }
