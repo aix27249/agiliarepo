@@ -156,7 +156,7 @@ class Module_admin_actions extends AdminModule {
 				$variant_names = $repository->setup_variants($osversion);
 				if (count($variant_names)===0) continue;
 				$setup_variants .= '<h4>' . $repository->name . '/' . $osversion . ':</h4>';
-				$setup_variants .= UiCore::multiCheckbox($variant_names, [], '_setup_variant');
+				$setup_variants .= UiCore::multiCheckbox($variant_names, [], '/' . $osversion . '/' . $repository . '_setup_variant');
 			}
 			$slide .= '<h3>Setup variants:</h3><div id="create_iso_setup_variants">' . $setup_variants . '</div>';
 		}
@@ -201,9 +201,13 @@ class Module_admin_actions extends AdminModule {
 				if (isset($_POST[$js_osversion . '_osversion'])) $task_options['osversions'][] = $osversion;
 				$variant_names = $repository->setup_variants($osversion);
 				foreach($variant_names as $variant_name) {
-					if (isset($_POST[$variant_name . '_setup_variant'])) $task_options['setup_variants'][] = $variant_name;
+					$setup_variant_key = $variant_name . '/' . $osversion . '/' . $repository->name . '_setup_variant';
+					$js_setup_variant_key = preg_replace('/\./', '_', $setup_variant_key);
+					if (isset($_POST[$js_setup_variant_key])) $task_options['setup_variants'][] = ['name' => $variant_name, 'osversion' => $osversion, 'repository' => $repository->name];
 				}
 			}
+			if (count($task_options['setup_variants'])===0) return 'No setup variants - cannot continue';
+
 			foreach($repository->branches() as $branch) {
 				if (isset($_POST[$branch . '_branch'])) $task_options['branches'][] = $branch;
 			}
@@ -218,7 +222,10 @@ class Module_admin_actions extends AdminModule {
 				', osversions: ' . implode(', ', $task_options['osversions']) . 
 				', branches: ' . implode(', ', $task_options['branches']) . 
 				', subgroups: ' . implode(', ', $task_options['subgroups']) . 
-				', setup variants: ' . implode(', ', $task_options['setup_variants']);
+				', setup variants: ';
+			foreach($task_options['setup_variants'] as $sv) {
+				$task_desc .= $sv['repository'] . '/' . $sv['osversion'] . '/' . $sv['name'] . '; ';
+			}
 
 
 

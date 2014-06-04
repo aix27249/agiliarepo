@@ -23,18 +23,19 @@ class CreateIsoTask extends AsyncTask {
 	
 		// Extract setup variants which should be used in setup
 		$setup_variants = [];
-		foreach($this->options['osversions'] as $osversion) {
-			foreach($this->options['setup_variants'] as $variant_name) {
-				echo "Querying setup variant $variant_name\n";
-				$sv_query = ['name' => $variant_name, 'osversion' => $osversion, 'repository' => $this->options['repository']];
-				$variant = self::db()->setup_variants->findOne($sv_query);
-				if ($variant === NULL) {
-					continue;
-					echo 'Setup variant not found: ' . $variant_name . "\n";
-					die('');
-				}
-				$setup_variants[] = $variant;
+		foreach($this->options['setup_variants'] as $variant_info) {
+			$variant_name = $variant_info['name'];
+			$variant_osversion = $variant_info['osversion'];
+			$variant_repository = $variant_info['repository'];
+			echo "Querying setup variant $variant_name\n";
+			$sv_query = ['name' => $variant_name, 'osversion' => $variant_osversion, 'repository' => $variant_repository];
+			$variant = self::db()->setup_variants->findOne($sv_query);
+			if ($variant === NULL) {
+				// Not found? It's a bug!
+				$this->setStatus('failed', 'Setup variant not found: ' . implode('/', [$variant_repository, $variant_osversion, $variant_name]));
+				die('');
 			}
+			$setup_variants[] = $variant;
 		}
 
 		// Extract packages which are used in setup_variants
@@ -56,7 +57,7 @@ class CreateIsoTask extends AsyncTask {
 			$query = ['md5' => ['$in' => $tree->dep_reduced($package_names, true)]];
 		}
 		catch (Exception $e) {
-			$this->setProgress(0, 100, 'Package tree error: ' . $e->getMessage());
+			$this->setStatus('failed', 'Package tree error: ' . $e->getMessage());
 			die('ISO creation failed');
 		}
 
