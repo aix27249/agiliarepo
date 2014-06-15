@@ -1,14 +1,17 @@
 <?php
 
 class Module_iso extends Module {
+	public static $scripts = ['iso.js'];
 
 	public function run() {
-		$user = Auth::user();
-		if (!$user) return 'You need to be logged in before accessing this page';
+		$this->user = Auth::user();
+		if (!$this->user) return 'You need to be logged in before accessing this page';
 
-		$images = FsMap::scandir($user->homedir() . '/iso/images');
+		if (trim(@$_POST['action'])!=='') die($this->ajax($_POST['action'], $_POST));
+
+		$images = FsMap::scandir($this->user->homedir() . '/iso/images');
 		if (isset($this->page->path[2])) {
-			$image = $user->homedir() . '/iso/images/' . basename($this->page->path[2]);
+			$image = $this->user->homedir() . '/iso/images/' . basename($this->page->path[2]);
 			if (!file_exists($image)) return 'Sorry, file not found';
 
 			// Serve file
@@ -37,14 +40,33 @@ class Module_iso extends Module {
 
 		$ret = '<h1>User ISO images</h1>';
 		
-		$ret .= '<ul>';
+
+		$table = [];
 		foreach($images as $img) {
-			$ret .= '<li><a href="/iso/' . $img . '">' . $img . '</a> (' . UI::humanizeSize(filesize($user->homedir() . '/iso/images/' . $img)) . ')</li>';
+			$item = [
+			'<a href="/iso/' . $img . '">' . $img . '</a>',
+			UI::humanizeSize(filesize($this->user->homedir() . '/iso/images/' . $img)),
+			'<input type="button" onclick="iso.remove(\'' . $img . '\');" value="Remove" />'
+			];
+			$table[] = $item;
 		}
-		$ret .= '</ul>';
+
+		$ret .= UiCore::table($table);
 
 		return $ret;
 
 
+	}
+
+	public function ajax($action, $data) {
+		switch($action) {
+		case 'remove':
+			$image = $this->user->homedir() . '/iso/images/' . trim($data['name']);
+			if (!file_exists($image)) return 'File not found';
+			unlink($image);
+			return 'OK';
+		default:
+			return 'Unknown action ' . $action;
+		}
 	}
 }
