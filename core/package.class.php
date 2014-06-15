@@ -293,7 +293,7 @@ class PackageTree {
 		//if (in_array($package['md5'], $ret, true)) return;
 		$ret[] = $package['md5'];
 		foreach($package['dependencies'] as $dep) {
-			$dep_package = self::find_package($dep['name'], $packages);
+			$dep_package = self::find_package($dep, $packages);
 			if ($dep_package===NULL) throw new Exception('<a href="/pkgview/' . $package['md5'] . '">' . $package['name'] . '-' . $package['version'] . '-' . $package['arch'] . '-' . $package['build'] . '</a> has broken deps: cannot find "' . $dep['name'] . '"');
 			if (in_array($dep_package['md5'], $ret, true)) {
 				echo "Package " . $dep_package['name'] . " is already selected\n";
@@ -304,12 +304,26 @@ class PackageTree {
 			self::package_requires($dep_package, $packages, $ret);
 		}
 	}
-	public static function find_package($name, &$packages) {
-		foreach($packages as $package) {
-			if ($package['name']===$name) return $package;
+	public static function match($package, $criteria) {
+		if ($package['name']!==$criteria['name']) {
+			if (!is_array($package['provides']) || !in_array($criteria['name'], $package['provides'], true)) {
+				return false;
+			}
 		}
+		if ($criteria['condition']==='any') return true;
+		if ($criteria['condition']==='equal') {
+			if ($package['version']===$criteria['version']) return true;
+			else return false;
+		}
+
+		$vcmp = VersionCompare::strverscmp($package['version'], $criteria['version']);
+		if ($vcmp>=0 && in_array($criteria['condition'], ['atleast'])) return true;
+		return false;
+
+	}
+	public static function find_package($dep, &$packages) {
 		foreach($packages as $package) {
-			if (in_array($name, $package['provides'], true)) return $package;
+			if (self::match($package, $dep)) return $package;
 		}
 		return NULL;
 	}
