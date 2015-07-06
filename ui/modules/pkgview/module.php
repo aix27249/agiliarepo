@@ -29,7 +29,7 @@ class Module_pkgview extends RepositoryModule {
 			'build' => $package->build,
 			'architecture' => $package->arch,
 			'add_date' => date('Y-m-d H:i', $package->add_date->sec),
-			'added_by' => $package->added_by,
+			'added_by' => (trim($package->added_by)==='' ? $package->maintainer['name'] : $package->added_by),
 			'tags' => $tags,
 			'md5' => $package->md5,
 			'package size' => UI::humanizeSize($package->compressed_size),
